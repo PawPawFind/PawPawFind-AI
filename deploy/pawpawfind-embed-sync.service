@@ -1,0 +1,17 @@
+[Unit]
+Description=PawPawFind embedding batch sync (shelter + report)
+After=network.target pawpawfind-backend.service
+
+[Service]
+Type=oneshot
+User=ec2-user
+WorkingDirectory=/home/ec2-user/PawPawFind-AI
+Environment=PATH=/home/ec2-user/.local/bin:/usr/local/bin:/usr/bin
+Environment=PAWPAWFIND_BACKEND_URL=http://127.0.0.1:8080
+Environment=GALLERY_CACHE_ROOT=/home/ec2-user/PawPawFind-AI/cache/gallery
+ExecStart=/home/ec2-user/.local/bin/uv run python scripts/sync_all_embeddings.py --batch-size 50
+StandardOutput=append:/home/ec2-user/logs/embed-sync.log
+StandardError=append:/home/ec2-user/logs/embed-sync.error.log
+
+[Install]
+WantedBy=multi-user.target

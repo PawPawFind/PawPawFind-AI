@@ -1,0 +1,15 @@
+# --- cell 2 ---: 14 lines
+# --- cell 4 ---: 120 lines
+# --- cell 6 ---: 46 lines
+# --- cell 8 ---: 302 lines
+# --- cell 10 ---: 76 lines
+# --- cell 12 ---: 170 lines
+# --- cell 14 ---: 49 lines
+# --- cell 16 ---: 151 lines
+# --- cell 18 ---: 284 lines
+# --- cell 20 ---: 554 lines
+# --- cell 22 ---: 37 lines
+# --- cell 24 ---: 64 lines
+# --- cell 26 ---: 250 lines
+# --- cell 28 ---: 123 lines
+# --- cell 30 ---: 162 lines

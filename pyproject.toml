@@ -7,11 +7,25 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
+    "httpx",
 ]
 
 [dependency-groups]
+ml = [
+    "torch",
+    "transformers>=4.46,<5",
+    "ultralytics>=8.3",
+    "ImageHash>=4.3",
+    "numpy",
+    "Pillow",
+    "tqdm>=4.66",
+    "huggingface_hub>=0.26",
+    "safetensors>=0.4",
+    "sentencepiece>=0.2",
+]
 dev = [
     "httpx",
+    "numpy",
     "pytest",
     "ruff",
 ]
@@ -25,6 +39,10 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+exclude = ["scripts/generate_reid_modules.py"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/reid/*.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"
