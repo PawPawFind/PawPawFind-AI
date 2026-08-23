@@ -174,13 +174,13 @@ def load_gallery_cache(
     feature_file = feature_root / "gallery_features.npz"
     meta_file = feature_root / "gallery_meta.json"
     manifest_file = feature_root / "manifest.json"
-    if not feature_file.exists() or not meta_file.exists():
+    if not feature_file.exists() or not meta_file.exists() or not manifest_file.exists():
         raise FileNotFoundError(
             f"Gallery cache not found under {feature_root}. "
             "Run scripts/build_gallery.py or set GALLERY_CACHE_ROOT."
         )
     manifest = load_json(manifest_file, {})
-    if manifest and not cache_is_compatible(manifest):
+    if not cache_is_compatible(manifest):
         raise RuntimeError("Gallery cache incompatible with current model/preprocess version")
     arrays = np.load(feature_file, allow_pickle=False)
     gallery_data = {key: arrays[key] for key in arrays.files}
