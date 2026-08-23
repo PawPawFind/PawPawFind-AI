@@ -35,6 +35,8 @@ def save_json(path: Path, value: Any) -> None:
 
 
 def cache_is_compatible(manifest: Dict[str, Any]) -> bool:
+    from app.reid.runtime import get_embed_dim
+
     return (
         manifest.get("model_id") == MODEL_ID
         and manifest.get("model_version") == MODEL_VERSION
@@ -178,9 +180,7 @@ def load_gallery_cache(
             "Run scripts/build_gallery.py or set GALLERY_CACHE_ROOT."
         )
     manifest = load_json(manifest_file, {})
-    from app.reid.runtime import get_embed_dim
-
-    if manifest and not cache_is_compatible({**manifest, "embedding_dim": get_embed_dim()}):
+    if manifest and not cache_is_compatible(manifest):
         raise RuntimeError("Gallery cache incompatible with current model/preprocess version")
     arrays = np.load(feature_file, allow_pickle=False)
     gallery_data = {key: arrays[key] for key in arrays.files}

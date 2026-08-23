@@ -7,7 +7,8 @@ import threading
 from pathlib import Path
 from typing import Any
 
-_lock = threading.Lock()
+_model_lock = threading.Lock()
+_gallery_lock = threading.Lock()
 _reid_model: Any | None = None
 _detector: Any | None = None
 _embed_dim: int | None = None
@@ -35,7 +36,7 @@ def get_embed_dim() -> int:
 def get_reid_model():
     global _reid_model
     if _reid_model is None:
-        with _lock:
+        with _model_lock:
             if _reid_model is None:
                 from app.reid.models import PetReIDModel
 
@@ -47,7 +48,7 @@ def get_reid_model():
 def get_detector():
     global _detector
     if _detector is None:
-        with _lock:
+        with _model_lock:
             if _detector is None:
                 from ultralytics import YOLO
 
@@ -75,7 +76,7 @@ def get_gallery(
 def _get_gallery_npz() -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     global _gallery_data, _gallery_meta
     if _gallery_data is None or _gallery_meta is None:
-        with _lock:
+        with _gallery_lock:
             if _gallery_data is None or _gallery_meta is None:
                 from app.reid.config import CACHE_ROOT
                 from app.reid.gallery import load_gallery_cache
