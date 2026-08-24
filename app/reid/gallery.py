@@ -57,8 +57,7 @@ def build_gallery_with_cache(
         cached_arrays = np.load(FEATURE_FILE, allow_pickle=False)
         cached_meta = load_json(META_FILE, {})
         cached_index = {
-            str(gallery_id): index
-            for index, gallery_id in enumerate(cached_arrays["gallery_ids"])
+            str(gallery_id): index for index, gallery_id in enumerate(cached_arrays["gallery_ids"])
         }
         print("compatible cached vectors:", len(cached_index))
     elif FEATURE_FILE.exists():
@@ -186,4 +185,3 @@ def load_gallery_cache(
     gallery_data = {key: arrays[key] for key in arrays.files}
     metadata = load_json(meta_file, {})
     return gallery_data, metadata
-

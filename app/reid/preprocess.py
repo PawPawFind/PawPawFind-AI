@@ -89,12 +89,16 @@ def detect_largest_pet(
         masks = result.masks.data
         if box_index < len(masks):
             mask = masks[box_index].detach().float()[None, None]
-            mask = torch.nn.functional.interpolate(
-                mask,
-                size=(height, width),
-                mode="bilinear",
-                align_corners=False,
-            )[0, 0].cpu().numpy()
+            mask = (
+                torch.nn.functional.interpolate(
+                    mask,
+                    size=(height, width),
+                    mode="bilinear",
+                    align_corners=False,
+                )[0, 0]
+                .cpu()
+                .numpy()
+            )
             mask_crop = mask[top:bottom, left:right]
             foreground = np.asarray(crop, dtype=np.float32)
             alpha = np.clip(mask_crop[..., None], 0.0, 1.0)
@@ -171,6 +175,3 @@ def image_feature_pack(path: str | Path, species: str) -> Dict[str, Any]:
         "bbox_fraction": crop_result.bbox_fraction,
         "blur": blur_score(crop_result.crop),
     }
-
-
-

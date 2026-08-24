@@ -9,7 +9,11 @@ from app.reid.config import MODEL_VERSION, PREPROCESS_VERSION
 from app.schemas.gallery import AnimalEmbeddingBatchItem
 from app.schemas.sync import AnimalForEmbeddingItem
 from app.services.backend_client import fetch_animals_for_embedding, upsert_animal_embeddings
-from app.services.embed_sync_state import EmbedSyncState, load_sync_state, save_sync_state, utc_now_iso
+from app.services.embed_sync_state import (
+    load_sync_state,
+    save_sync_state,
+    utc_now_iso,
+)
 from app.services.image_download import download_image_url, make_temp_dir
 
 

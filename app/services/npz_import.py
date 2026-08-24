@@ -44,7 +44,9 @@ def _load_json(path: Path, default: Any) -> Any:
         return json.load(file)
 
 
-def load_npz_gallery(features_dir: Path) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
+def load_npz_gallery(
+    features_dir: Path,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, Any]]:
     import numpy as np
 
     feature_file = features_dir / "gallery_features.npz"
@@ -150,7 +152,9 @@ def import_npz_to_rds(
     resolved = resolve_features_dir(features_dir)
     gallery_data, metadata, manifest = load_npz_gallery(resolved)
     model_version = model_version or str(manifest.get("model_version") or MODEL_VERSION)
-    preprocess_version = preprocess_version or str(manifest.get("preprocess_version") or PREPROCESS_VERSION)
+    preprocess_version = preprocess_version or str(
+        manifest.get("preprocess_version") or PREPROCESS_VERSION
+    )
 
     total_rows = len(gallery_data["gallery_ids"])
     if limit > 0:

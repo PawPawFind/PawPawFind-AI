@@ -50,7 +50,12 @@ def main() -> None:
     config = re.sub(r"print\(\"SPECIES_LIST:.*?\n", "", config)
     config = re.sub(r"print\(\"FULL SYNC:.*?\n", "", config)
     config = re.sub(r"DEVICE = .*?\n", "", config)
-    config = re.sub(r"if torch\.cuda\.is_available\(\):.*?torch\.set_float32_matmul_precision.*?\n", "", config, flags=re.S)
+    config = re.sub(
+        r"if torch\.cuda\.is_available\(\):.*?torch\.set_float32_matmul_precision.*?\n",
+        "",
+        config,
+        flags=re.S,
+    )
     config = re.sub(r"print\(\"DEVICE:.*?\n", "", config)
     config = re.sub(r"^import matplotlib.*\n", "", config, flags=re.M)
     config = re.sub(r"^from getpass import getpass\n", "", config, flags=re.M)
@@ -73,9 +78,7 @@ def main() -> None:
     models = re.sub(r"^print\(\"EMBED_DIM:.*?\n", "", models, flags=re.M)
     (REID / "models.py").write_text(
         '"""DINOv2 Re-ID model wrapper."""\n\n'
-        "from __future__ import annotations\n\n"
-        + models
-        + "\n"
+        "from __future__ import annotations\n\n" + models + "\n"
     )
 
     # preprocess.py
@@ -101,14 +104,17 @@ def main() -> None:
         "    USE_FOREGROUND_SEGMENTATION,\n"
         "    YOLO_CONFIDENCE,\n"
         ")\n"
-        "from app.reid.runtime import get_detector, get_reid_model\n\n"
-        + preprocess
-        + "\n"
+        "from app.reid.runtime import get_detector, get_reid_model\n\n" + preprocess + "\n"
     )
 
     # gallery.py - functions + load helper, strip build execution
     gallery = cell16
-    gallery = re.sub(r"\n\ngallery, gallery_meta = build_gallery_with_cache\(image_records\).*$", "", gallery, flags=re.S)
+    gallery = re.sub(
+        r"\n\ngallery, gallery_meta = build_gallery_with_cache\(image_records\).*$",
+        "",
+        gallery,
+        flags=re.S,
+    )
     gallery = re.sub(
         r"for species in SPECIES_LIST:.*?print\(f\"\{species\} gallery images:.*?\)\n",
         "",
@@ -148,21 +154,24 @@ def load_gallery_cache(cache_root: Path | None = None) -> tuple[Dict[str, np.nda
         "from tqdm.auto import tqdm\n\n"
         "from app.reid.config import CACHE_ROOT, EMBED_DIM, FEATURE_ROOT, MANIFEST_FILE, META_FILE, FEATURE_FILE, MODEL_ID, MODEL_VERSION, PREPROCESS_VERSION\n"
         "from app.reid.preprocess import image_feature_pack\n\n"
-        + gallery.replace("FEATURE_FILE = FEATURE_ROOT / \"gallery_features.npz\"", "FEATURE_FILE = FEATURE_ROOT / \"gallery_features.npz\"  # noqa: E501")
+        + gallery.replace(
+            'FEATURE_FILE = FEATURE_ROOT / "gallery_features.npz"',
+            'FEATURE_FILE = FEATURE_ROOT / "gallery_features.npz"  # noqa: E501',
+        )
         + "\n"
     )
 
     # search.py from cell 18
     (REID / "search.py").write_text(
-        '"""Visual gallery search."""\n\n'
-        "from __future__ import annotations\n\n"
-        + cell18
-        + "\n"
+        '"""Visual gallery search."""\n\nfrom __future__ import annotations\n\n' + cell18 + "\n"
     )
 
     # rerank.py from cell 20 (includes multimodal entry)
     rerank = cell20
-    rerank = rerank.replace("_text_tokenizer = None\n_text_model = None", "_text_tokenizer = None\n_text_model = None  # lazy text encoder")
+    rerank = rerank.replace(
+        "_text_tokenizer = None\n_text_model = None",
+        "_text_tokenizer = None\n_text_model = None  # lazy text encoder",
+    )
     rerank = rerank.replace("from app.reid.search import", "# uses SearchMatch from types")
     (REID / "rerank.py").write_text(
         '"""Metadata tag + text reranking."""\n\n'
