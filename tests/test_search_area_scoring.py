@@ -12,9 +12,10 @@ from app.search_area.environment import (
     StaticEnvironmentProvider,
     parse_overpass_response,
 )
-from app.search_area.geo import GeoPoint, GridCell, generate_grid, offset_point
+from app.search_area.geo import GeoPoint, GridCell, distance_meters, generate_grid, offset_point
 from app.search_area.scoring import (
     AreaCandidate,
+    EnvironmentSpatialIndex,
     ScoreComponents,
     ScoredCell,
     cluster_scored_cells,
@@ -54,6 +55,65 @@ def test_behavior_environment_changes_score_and_scores_are_normalized() -> None:
     assert fearful.priority_score > human.priority_score
     assert 0 <= fearful.priority_score <= 100
     assert all(0 <= value <= 1 for value in vars(fearful.components).values())
+
+
+def test_spatial_index_includes_feature_on_influence_boundary() -> None:
+    boundary = offset_point(ORIGIN, 300, 0)
+    data = environment(EnvironmentKind.GREEN_SPACE, boundary)
+    index = EnvironmentSpatialIndex(data, ORIGIN, bucket_size_meters=300)
+
+    assert index.nearby(ORIGIN, 300) == data.features
+
+
+def test_spatial_index_preserves_brute_force_scores_and_nearby_kinds() -> None:
+    cells = generate_grid(ORIGIN, 400)
+    data = EnvironmentData(
+        "TEST",
+        (
+            EnvironmentFeature(
+                offset_point(ORIGIN, 300, 0), frozenset({EnvironmentKind.GREEN_SPACE})
+            ),
+            EnvironmentFeature(
+                offset_point(ORIGIN, -250, 200), frozenset({EnvironmentKind.FOOTPATH})
+            ),
+            EnvironmentFeature(
+                offset_point(ORIGIN, 1000, 1000), frozenset({EnvironmentKind.MAJOR_ROAD})
+            ),
+        ),
+    )
+    optimized = score_grid(cells, 400, BehaviorType.FEARFUL, BehaviorProfile(), data)
+    expected = []
+    for cell in cells:
+        nearby = tuple(
+            feature
+            for feature in data.features
+            if distance_meters(cell.center, feature.point) <= 300
+        )
+        expected.append(
+            score_grid(
+                [cell],
+                400,
+                BehaviorType.FEARFUL,
+                BehaviorProfile(),
+                EnvironmentData("TEST", nearby),
+            )[0]
+        )
+
+    assert [item.priority_score for item in optimized] == [item.priority_score for item in expected]
+    assert [item.nearby_kinds for item in optimized] == [item.nearby_kinds for item in expected]
+
+
+def test_spatial_index_handles_empty_and_small_environment_data() -> None:
+    cell = GridCell(0, 0, ORIGIN, 0)
+    empty = score_grid(
+        [cell], 1000, BehaviorType.ALOOF, BehaviorProfile(), EnvironmentData("TEST", ())
+    )
+    small = score_grid(
+        [cell], 1000, BehaviorType.ALOOF, BehaviorProfile(), environment(EnvironmentKind.ROAD)
+    )
+
+    assert len(empty) == 1
+    assert small[0].nearby_kinds == {EnvironmentKind.ROAD}
 
 
 def test_major_road_and_railway_reduce_accessibility() -> None:

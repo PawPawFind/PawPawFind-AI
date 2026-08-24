@@ -13,6 +13,24 @@ class SearchAreaHeuristicConfig:
     max_area_radius_meters: int = 500
     max_areas: int = 3
     environment_influence_meters: int = 300
+    environment_bucket_size_meters: int = 300
+    overpass_maxsize_bytes: int = 10_000_000
+    overpass_highway_values: tuple[str, ...] = (
+        "footway",
+        "path",
+        "pedestrian",
+        "track",
+        "motorway",
+        "trunk",
+        "primary",
+        "secondary",
+        "tertiary",
+        "residential",
+        "living_street",
+        "unclassified",
+        "service",
+        "road",
+    )
     high_score_floor: float = 50.0
     high_score_band: float = 12.0
     cluster_radius_base_meters: int = 100

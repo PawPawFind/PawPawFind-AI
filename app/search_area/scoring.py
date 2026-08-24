@@ -4,7 +4,12 @@ from dataclasses import dataclass
 from app.schemas.search_area import BehaviorProfile, BehaviorType
 from app.search_area.config import SEARCH_AREA_CONFIG, SearchAreaHeuristicConfig
 from app.search_area.environment import EnvironmentData, EnvironmentFeature, EnvironmentKind
-from app.search_area.geo import GeoPoint, GridCell, distance_meters
+from app.search_area.geo import (
+    GeoPoint,
+    GridCell,
+    coordinate_offset_to_meters,
+    distance_meters,
+)
 
 
 @dataclass(frozen=True)
@@ -32,6 +37,52 @@ class AreaCandidate:
     kinds: frozenset[EnvironmentKind]
 
 
+class EnvironmentSpatialIndex:
+    def __init__(
+        self,
+        environment: EnvironmentData,
+        reference: GeoPoint,
+        bucket_size_meters: int,
+    ) -> None:
+        if bucket_size_meters <= 0:
+            raise ValueError("환경 공간 버킷 크기는 양수여야 합니다.")
+        self.environment = environment
+        self.reference = reference
+        self.bucket_size_meters = bucket_size_meters
+        buckets: dict[tuple[int, int], list[EnvironmentFeature]] = {}
+        for feature in environment.features:
+            buckets.setdefault(self._bucket_key(feature.point), []).append(feature)
+        self._buckets = {key: tuple(features) for key, features in buckets.items()}
+
+    def nearby(self, point: GeoPoint, influence_meters: int) -> tuple[EnvironmentFeature, ...]:
+        if influence_meters < 0:
+            raise ValueError("환경 영향 반경은 음수일 수 없습니다.")
+        center_row, center_column = self._bucket_key(point)
+        bucket_extent = math.ceil(influence_meters / self.bucket_size_meters) + 1
+        candidates = (
+            feature
+            for row in range(center_row - bucket_extent, center_row + bucket_extent + 1)
+            for column in range(center_column - bucket_extent, center_column + bucket_extent + 1)
+            for feature in self._buckets.get((row, column), ())
+        )
+        return tuple(
+            feature
+            for feature in candidates
+            if distance_meters(point, feature.point) <= influence_meters
+        )
+
+    def _bucket_key(self, point: GeoPoint) -> tuple[int, int]:
+        north, east = coordinate_offset_to_meters(
+            point.latitude - self.reference.latitude,
+            point.longitude - self.reference.longitude,
+            self.reference.latitude,
+        )
+        return (
+            math.floor(north / self.bucket_size_meters),
+            math.floor(east / self.bucket_size_meters),
+        )
+
+
 def score_grid(
     cells: list[GridCell],
     search_radius_meters: int,
@@ -40,8 +91,13 @@ def score_grid(
     environment: EnvironmentData,
     config: SearchAreaHeuristicConfig = SEARCH_AREA_CONFIG,
 ) -> list[ScoredCell]:
+    if not cells:
+        return []
+    spatial_index = EnvironmentSpatialIndex(
+        environment, cells[0].center, config.environment_bucket_size_meters
+    )
     return [
-        _score_cell(cell, search_radius_meters, behavior_type, profile, environment, config)
+        _score_cell(cell, search_radius_meters, behavior_type, profile, spatial_index, config)
         for cell in cells
     ]
 
@@ -51,10 +107,10 @@ def _score_cell(
     search_radius_meters: int,
     behavior_type: BehaviorType,
     profile: BehaviorProfile,
-    environment: EnvironmentData,
+    spatial_index: EnvironmentSpatialIndex,
     config: SearchAreaHeuristicConfig,
 ) -> ScoredCell:
-    nearby = _nearby_features(cell.center, environment, config.environment_influence_meters)
+    nearby = spatial_index.nearby(cell.center, config.environment_influence_meters)
     kinds = frozenset(kind for feature in nearby for kind in feature.kinds)
     distance_score = _clamp01(1 - cell.distance_meters / search_radius_meters)
     preferences = dict(dict(config.behavior_environment_preferences)[behavior_type.value])
@@ -74,16 +130,6 @@ def _score_cell(
     weights = dict(config.score_weights)
     final = 100 * sum(getattr(components, name) * weight for name, weight in weights.items())
     return ScoredCell(cell, _clamp(final, 0, 100), components, kinds)
-
-
-def _nearby_features(
-    point: GeoPoint, environment: EnvironmentData, influence_meters: int
-) -> tuple[EnvironmentFeature, ...]:
-    return tuple(
-        feature
-        for feature in environment.features
-        if distance_meters(point, feature.point) <= influence_meters
-    )
 
 
 def _event_context_score(

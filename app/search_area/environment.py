@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
@@ -80,15 +81,17 @@ class OverpassEnvironmentProvider:
             raise EnvironmentProviderError("Overpass 환경 데이터가 비어 있습니다.")
         return data
 
-    @staticmethod
-    def _build_query(center: GeoPoint, radius_meters: int) -> str:
+    def _build_query(self, center: GeoPoint, radius_meters: int) -> str:
         around = f"around:{radius_meters},{center.latitude},{center.longitude}"
+        server_timeout = max(1, math.floor(self.timeout_seconds))
+        highway_pattern = "|".join(SEARCH_AREA_CONFIG.overpass_highway_values)
         return (
-            "[out:json];("
+            f"[out:json][timeout:{server_timeout}]"
+            f"[maxsize:{SEARCH_AREA_CONFIG.overpass_maxsize_bytes}];("
             f'nwr["building"]({around});'
             f'nwr["landuse"]({around});'
             f'nwr["leisure"]({around});'
-            f'nwr["highway"]({around});'
+            f'nwr["highway"~"^({highway_pattern})$"]({around});'
             f'nwr["natural"="water"]({around});'
             f'nwr["waterway"]({around});'
             f'nwr["railway"]({around});'

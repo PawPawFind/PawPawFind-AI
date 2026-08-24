@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs
+
 import httpx
 import pytest
 
@@ -66,7 +68,13 @@ def test_parse_overpass_response_rejects_invalid_shape(payload: object) -> None:
 @pytest.mark.anyio
 async def test_provider_uses_bounded_radius_and_parses_response() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
-        assert "around%3A3000" in request.content.decode()
+        query = parse_qs(request.content.decode())["data"][0]
+        assert "around:3000" in query
+        assert "[timeout:10]" in query
+        assert "[maxsize:10000000]" in query
+        assert '["highway"~"^(footway|path|pedestrian|track|' in query
+        assert 'service|road)$"]' in query
+        assert 'nwr["highway"]' not in query
         return httpx.Response(
             200,
             json={"elements": [{"lat": 37.5, "lon": 127.0, "tags": {"building": "yes"}}]},
