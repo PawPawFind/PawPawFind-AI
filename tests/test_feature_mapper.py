@@ -1,5 +1,9 @@
 from app.schemas.match import MatchRequest
-from app.services.feature_mapper import features_to_query_metadata, matched_tags_for_be
+from app.services.feature_mapper import (
+    conflicting_tags_for_be,
+    features_to_query_metadata,
+    matched_tags_for_be,
+)
 
 
 def test_features_to_query_metadata_maps_korean_categories() -> None:
@@ -32,5 +36,16 @@ def test_features_to_query_metadata_maps_korean_categories() -> None:
 
 
 def test_matched_tags_for_be_converts_field_names() -> None:
-    matched = matched_tags_for_be(("coat_length:long_coat", "ear_shape:folded_ears"))
-    assert matched == {"털길이": "long_coat", "귀": "folded_ears"}
+    matched = matched_tags_for_be(
+        (
+            "coat_length:long_coat",
+            "ear_shape:folded_ears",
+            "distinctive_features:white_patch",
+        )
+    )
+    assert matched == {
+        "털길이": "long_coat",
+        "귀": "folded_ears",
+        "특징": "white_patch",
+    }
+    assert conflicting_tags_for_be(("distinctive_features",)) == {"특징": "conflict"}

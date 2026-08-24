@@ -22,14 +22,18 @@ def download_photo_urls(urls: list[str]) -> list[Path]:
     temp_dir = Path(tempfile.mkdtemp(prefix="pawpawfind-query-"))
     saved: list[Path] = []
 
-    with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as client:
-        for index, url in enumerate(urls[:MAX_PHOTOS]):
-            response = client.get(url)
-            response.raise_for_status()
-            suffix = Path(urlparse(url).path).suffix or ".jpg"
-            path = temp_dir / f"photo_{index}{suffix}"
-            path.write_bytes(response.content)
-            saved.append(path)
+    try:
+        with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as client:
+            for index, url in enumerate(urls[:MAX_PHOTOS]):
+                response = client.get(url)
+                response.raise_for_status()
+                suffix = Path(urlparse(url).path).suffix or ".jpg"
+                path = temp_dir / f"photo_{index}{suffix}"
+                path.write_bytes(response.content)
+                saved.append(path)
+    except Exception:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise
 
     return saved
 

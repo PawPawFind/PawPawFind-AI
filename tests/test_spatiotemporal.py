@@ -15,6 +15,23 @@ def test_address_location_similarity_rewards_shared_district() -> None:
     assert address_location_similarity("서울특별시 마포구", "제주특별자치도 제주시") == 0.10
 
 
+def test_address_location_similarity_requires_matching_parent_for_same_dong() -> None:
+    assert (
+        address_location_similarity(
+            "서울특별시 마포구 중앙동",
+            "부산광역시 중구 중앙동",
+        )
+        == 0.10
+    )
+    assert (
+        address_location_similarity(
+            "서울특별시 마포구 중앙동",
+            "서울특별시 마포구 중앙동",
+        )
+        == 0.90
+    )
+
+
 def test_coordinate_location_score_decreases_with_distance() -> None:
     query = {"latitude": 37.5665, "longitude": 126.9780}
     nearby = location_similarity(query, {"latitude": 37.5700, "longitude": 126.9800})

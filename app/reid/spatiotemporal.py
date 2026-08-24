@@ -82,17 +82,51 @@ def address_units(address: Any) -> list[str]:
     return list(dict.fromkeys(re.findall(pattern, normalized)))
 
 
+def address_unit_level(unit: str) -> str:
+    if unit.endswith(("특별자치도", "특별자치시", "특별시", "광역시", "도")):
+        return "province"
+    if unit.endswith("시"):
+        return "city"
+    if unit.endswith(("군", "구")):
+        return "district"
+    return "local"
+
+
+def address_units_by_level(address: Any) -> dict[str, set[str]]:
+    levels = {"province": set(), "city": set(), "district": set(), "local": set()}
+    for unit in address_units(address):
+        levels[address_unit_level(unit)].add(unit)
+    return levels
+
+
 def address_location_similarity(query_address: Any, candidate_address: Any) -> float | None:
-    query_units = set(address_units(query_address))
-    candidate_units = set(address_units(candidate_address))
-    if not query_units or not candidate_units:
+    query_levels = address_units_by_level(query_address)
+    candidate_levels = address_units_by_level(candidate_address)
+    if not any(query_levels.values()) or not any(candidate_levels.values()):
         return None
-    shared = query_units & candidate_units
-    if any(unit.endswith(("동", "읍", "면", "리")) for unit in shared):
+
+    def conflicts(level: str) -> bool:
+        query_units = query_levels[level]
+        candidate_units = candidate_levels[level]
+        return bool(query_units and candidate_units and query_units.isdisjoint(candidate_units))
+
+    # A shared name such as "중앙동" or "중구" is meaningful only when its
+    # available parent areas do not contradict each other.
+    if conflicts("province"):
+        return 0.10
+
+    shared_province = query_levels["province"] & candidate_levels["province"]
+    shared_city = query_levels["city"] & candidate_levels["city"]
+    shared_district = query_levels["district"] & candidate_levels["district"]
+    shared_local = query_levels["local"] & candidate_levels["local"]
+    parent_shared = bool(shared_province or shared_city or shared_district)
+    parent_conflict = any(conflicts(level) for level in ("city", "district"))
+
+    if shared_local and parent_shared and not parent_conflict:
         return 0.90
-    if any(unit.endswith(("구", "군")) for unit in shared):
+    if shared_district and not conflicts("city"):
         return 0.70
-    if shared:
+    if shared_province or shared_city or shared_local:
         return 0.40
     return 0.10
 

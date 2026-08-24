@@ -21,7 +21,19 @@ CATEGORY_TO_FIELD: dict[str, str] = {
     "행동": "behavior",
 }
 
-FIELD_TO_CATEGORY: dict[str, str] = {value: key for key, value in CATEGORY_TO_FIELD.items()}
+FIELD_TO_CATEGORY: dict[str, str] = {
+    "sex": "성별",
+    "colors": "털색",
+    "patterns": "무늬",
+    "coat_length": "털길이",
+    "ear_shape": "귀",
+    "tail_shape": "꼬리",
+    "size": "크기",
+    "distinctive_features": "특징",
+    "accessories": "착용 중",
+    "body_condition": "몸 상태",
+    "behavior": "행동",
+}
 
 
 def features_to_query_metadata(request: MatchRequest) -> dict[str, object]:
