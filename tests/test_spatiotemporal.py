@@ -46,6 +46,13 @@ def test_address_location_similarity_ignores_numeric_building_dong() -> None:
     assert address_location_similarity(query, candidate) == 0.70
 
 
+def test_address_location_similarity_ignores_prefixed_building_dong() -> None:
+    query = "서울특별시 마포구 성산동 제101동"
+    candidate = "서울특별시 마포구 연남동 제101동"
+    assert "제101동" not in address_units(query)
+    assert address_location_similarity(query, candidate) == 0.70
+
+
 def test_coordinate_location_score_decreases_with_distance() -> None:
     query = {"latitude": 37.5665, "longitude": 126.9780}
     nearby = location_similarity(query, {"latitude": 37.5700, "longitude": 126.9800})

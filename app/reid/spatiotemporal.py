@@ -80,7 +80,9 @@ def address_units(address: Any) -> list[str]:
     normalized = unicodedata.normalize("NFKC", text_value(address))
     pattern = r"[가-힣0-9]+?(?:특별자치도|특별자치시|특별시|광역시|도|시|군|구|읍|면|동|리)"
     units = re.findall(pattern, normalized)
-    return list(dict.fromkeys(unit for unit in units if not re.fullmatch(r"\d+(?:동|리)", unit)))
+    return list(
+        dict.fromkeys(unit for unit in units if not re.fullmatch(r"(?:제)?\d+(?:동|리)", unit))
+    )
 
 
 def address_unit_level(unit: str) -> str:
