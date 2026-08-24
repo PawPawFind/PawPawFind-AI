@@ -12,6 +12,11 @@ class SearchAreaHeuristicConfig:
     min_area_radius_meters: int = 150
     max_area_radius_meters: int = 500
     max_areas: int = 3
+    environment_influence_meters: int = 300
+    high_score_floor: float = 50.0
+    high_score_band: float = 12.0
+    cluster_radius_base_meters: int = 100
+    overlap_ratio: float = 0.6
     base_radius_by_size: tuple[tuple[str, int], ...] = (
         ("소형", 500),
         ("중형", 1000),
@@ -38,6 +43,23 @@ class SearchAreaHeuristicConfig:
         ("corridor", 0.20),
         ("accessibility", 0.10),
         ("event_context", 0.10),
+    )
+    behavior_environment_preferences: tuple[tuple[str, tuple[tuple[str, float], ...]], ...] = (
+        ("HUMAN_SEEKING", (("COMMERCIAL", 1.0), ("BUILDING_RESIDENTIAL", 0.8), ("FOOTPATH", 0.7))),
+        ("FEARFUL", (("GREEN_SPACE", 1.0), ("BUILDING_RESIDENTIAL", 0.8), ("COMMERCIAL", 0.2))),
+        ("CHASE_DRIVEN", (("GREEN_SPACE", 0.9), ("FOOTPATH", 1.0), ("WATER", 0.7))),
+        ("ALOOF", (("GREEN_SPACE", 0.8), ("BUILDING_RESIDENTIAL", 0.6), ("FOOTPATH", 0.5))),
+    )
+    corridor_preferences: tuple[tuple[str, float], ...] = (
+        ("FOOTPATH", 1.0),
+        ("GREEN_SPACE", 0.7),
+        ("WATER", 0.7),
+        ("ROAD", 0.3),
+    )
+    accessibility_penalties: tuple[tuple[str, float], ...] = (
+        ("MAJOR_ROAD", 0.7),
+        ("RAILWAY_BARRIER", 0.8),
+        ("ROAD", 0.2),
     )
 
 
