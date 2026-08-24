@@ -6,9 +6,9 @@ from app.reid.config import MODEL_VERSION, PREPROCESS_VERSION
 from app.schemas.embed import ReportPhotoEmbedRequest, ReportPhotoEmbedResponse
 from app.schemas.gallery import EmbeddingBatchResponse
 from app.schemas.sync import ReportPhotoForEmbeddingItem
-from app.services.report_embed_sync import report_item_to_batch_item
 from app.services.backend_client import upsert_report_embeddings
 from app.services.image_download import make_temp_dir
+from app.services.report_embed_sync import report_item_to_batch_item
 
 
 def embed_report_photo(request: ReportPhotoEmbedRequest) -> ReportPhotoEmbedResponse:

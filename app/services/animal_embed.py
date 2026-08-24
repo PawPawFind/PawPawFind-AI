@@ -5,9 +5,9 @@ from __future__ import annotations
 from app.reid.config import MODEL_VERSION, PREPROCESS_VERSION
 from app.schemas.embed import AnimalEmbedRequest, ReportPhotoEmbedResponse
 from app.schemas.sync import AnimalForEmbeddingItem
-from app.services.shelter_embed_sync import animal_item_to_batch_items
 from app.services.backend_client import upsert_animal_embeddings
 from app.services.image_download import make_temp_dir
+from app.services.shelter_embed_sync import animal_item_to_batch_items
 
 
 def embed_animal(request: AnimalEmbedRequest) -> ReportPhotoEmbedResponse:
