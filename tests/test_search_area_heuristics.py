@@ -5,6 +5,7 @@ import pytest
 
 from app.schemas.search_area import BehaviorProfile, BehaviorType, SearchAreaRequest
 from app.search_area.heuristics import (
+    ESTIMATED_CURRENT_TIME_ASSUMPTION,
     ESTIMATED_EVENT_HOUR_ASSUMPTION,
     calculate_elapsed_time,
     calculate_search_radius,
@@ -49,6 +50,20 @@ def test_missing_hour_uses_seoul_noon_and_records_assumption() -> None:
     assert result.hours == 3
     assert result.event_at.hour == 12
     assert result.assumptions == (ESTIMATED_EVENT_HOUR_ASSUMPTION,)
+
+
+def test_missing_hour_on_current_morning_uses_current_seoul_time() -> None:
+    current = datetime(2026, 8, 24, 9, 30, tzinfo=SEOUL)
+    result = calculate_elapsed_time(request(eventHour=None), current)
+
+    assert result.event_at == current
+    assert result.hours == 0
+    assert result.assumptions == (ESTIMATED_CURRENT_TIME_ASSUMPTION,)
+
+
+def test_explicit_future_hour_on_current_day_is_rejected() -> None:
+    with pytest.raises(ValueError, match="미래"):
+        calculate_elapsed_time(request(eventHour=10), datetime(2026, 8, 24, 9, 30, tzinfo=SEOUL))
 
 
 def test_elapsed_time_is_deterministic_with_injected_now() -> None:

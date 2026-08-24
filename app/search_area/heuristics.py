@@ -12,6 +12,9 @@ from app.search_area.config import SEARCH_AREA_CONFIG, SearchAreaHeuristicConfig
 
 SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 ESTIMATED_EVENT_HOUR_ASSUMPTION = "실종 시간이 없어 Asia/Seoul 정오(12시)로 추정했습니다."
+ESTIMATED_CURRENT_TIME_ASSUMPTION = (
+    "실종 시간이 없고 당일 정오 이전이어서 현재 Asia/Seoul 시각으로 추정했습니다."
+)
 
 
 @dataclass(frozen=True)
@@ -38,13 +41,17 @@ def classify_behavior(profile: BehaviorProfile) -> BehaviorType:
 def calculate_elapsed_time(request: SearchAreaRequest, now: datetime) -> ElapsedTime:
     current = now.astimezone(SEOUL_TIMEZONE)
     estimated_hour = request.event_hour is None
-    event_hour = 12 if estimated_hour else request.event_hour
-    assert event_hour is not None
-    event_at = datetime.combine(request.event_date, time(hour=event_hour), SEOUL_TIMEZONE)
+    if estimated_hour and request.event_date == current.date() and current.hour < 12:
+        event_at = current
+        assumptions = (ESTIMATED_CURRENT_TIME_ASSUMPTION,)
+    else:
+        event_hour = 12 if estimated_hour else request.event_hour
+        assert event_hour is not None
+        event_at = datetime.combine(request.event_date, time(hour=event_hour), SEOUL_TIMEZONE)
+        assumptions = (ESTIMATED_EVENT_HOUR_ASSUMPTION,) if estimated_hour else ()
     elapsed_hours = (current - event_at).total_seconds() / 3600
     if elapsed_hours < 0:
         raise ValueError("eventDate와 eventHour는 현재 시각보다 미래일 수 없습니다.")
-    assumptions = (ESTIMATED_EVENT_HOUR_ASSUMPTION,) if estimated_hour else ()
     return ElapsedTime(event_at=event_at, hours=elapsed_hours, assumptions=assumptions)
 
 

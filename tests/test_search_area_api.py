@@ -102,6 +102,39 @@ def test_post_search_areas_returns_422_for_future_event() -> None:
     assert "미래" in response.json()["detail"]
 
 
+def test_post_search_areas_accepts_missing_hour_on_current_morning() -> None:
+    data = EnvironmentData(
+        source="FIXED_TEST_DATA",
+        features=(
+            EnvironmentFeature(
+                GeoPoint(37.5665, 126.978), frozenset({EnvironmentKind.GREEN_SPACE})
+            ),
+        ),
+    )
+    app.dependency_overrides[get_search_area_service] = lambda: SearchAreaRecommendationService(
+        StaticEnvironmentProvider(data),
+        now_provider=lambda: datetime(2026, 8, 24, 9, 30, tzinfo=SEOUL),
+    )
+    payload = request_payload()
+    payload.pop("eventHour")
+
+    response = client.post("/search-areas", json=payload)
+
+    assert response.status_code == 200
+    assert "당일 정오 이전" in response.json()["assumptions"][0]
+
+
+def test_post_search_areas_rejects_explicit_future_hour_on_current_day() -> None:
+    app.dependency_overrides[get_search_area_service] = lambda: SearchAreaRecommendationService(
+        StaticEnvironmentProvider(EnvironmentData("FIXED_TEST_DATA", ())),
+        now_provider=lambda: datetime(2026, 8, 24, 9, 30, tzinfo=SEOUL),
+    )
+    payload = request_payload()
+    payload["eventHour"] = 10
+
+    assert client.post("/search-areas", json=payload).status_code == 422
+
+
 def test_openapi_exposes_search_area_endpoint() -> None:
     schema = client.get("/openapi.json").json()
     assert "post" in schema["paths"]["/search-areas"]
