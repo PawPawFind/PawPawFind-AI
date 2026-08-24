@@ -12,14 +12,23 @@ def test_features_to_query_metadata_maps_korean_categories() -> None:
                 {"category": "털길이", "keyword": "장모"},
                 {"category": "귀", "keyword": "귀 접힘"},
                 {"category": "색상", "keyword": "흰색"},
+                {"category": "털색", "keyword": "갈색"},
             ],
+            "reportType": "LOST",
+            "eventDate": "2026-08-01",
+            "latitude": 37.5665,
+            "longitude": 126.9780,
+            "happenPlace": "서울특별시 마포구",
         }
     )
 
     metadata = features_to_query_metadata(request)
     assert metadata["coat_length"] == "장모"
     assert metadata["ear_shape"] == "귀 접힘"
-    assert metadata["colors"] == ["흰색"]
+    assert metadata["colors"] == ["흰색", "갈색"]
+    assert metadata["lost_at"] == "2026-08-01"
+    assert metadata["lost_location"]["latitude"] == 37.5665
+    assert metadata["lost_location"]["address"] == "서울특별시 마포구"
 
 
 def test_matched_tags_for_be_converts_field_names() -> None:

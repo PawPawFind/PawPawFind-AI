@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import shutil
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -29,3 +32,14 @@ def download_photo_urls(urls: list[str]) -> list[Path]:
             saved.append(path)
 
     return saved
+
+
+@contextmanager
+def downloaded_photo_urls(urls: list[str]) -> Iterator[list[Path]]:
+    paths = download_photo_urls(urls)
+    temp_dirs = {path.parent for path in paths}
+    try:
+        yield paths
+    finally:
+        for temp_dir in temp_dirs:
+            shutil.rmtree(temp_dir, ignore_errors=True)

@@ -12,6 +12,8 @@ Environment=PAWPAWFIND_MATCH_MODE=real
 Environment=PAWPAWFIND_GALLERY_SOURCE=rds
 Environment=PAWPAWFIND_BACKEND_URL=http://127.0.0.1:8080
 Environment=MATCH_TOP_K=20
+Environment=ENABLE_TEXT_RERANK=false
+Environment=GALLERY_RDS_CACHE_TTL_SECONDS=300
 ExecStart=/home/ec2-user/.local/bin/uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=on-failure
 RestartSec=10

@@ -35,6 +35,12 @@ class GalleryReportItem(BaseModel):
     embedding_full: list[float] = Field(alias="embeddingFull")
     embedding_crop: list[float] = Field(alias="embeddingCrop")
     features: list[MatchFeatureDto] = Field(default_factory=list)
+    report_type: str | None = Field(default=None, alias="reportType")
+    event_date: str | None = Field(default=None, alias="eventDate")
+    latitude: float | None = None
+    longitude: float | None = None
+    happen_place: str | None = Field(default=None, alias="happenPlace")
+    description: str | None = None
 
     model_config = {"populate_by_name": True}
 

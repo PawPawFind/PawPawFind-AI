@@ -21,6 +21,12 @@ class MatchRequest(BaseModel):
     species: Species
     photo_urls: list[str] = Field(default_factory=list, alias="photoUrls")
     features: list[MatchFeature] = Field(default_factory=list)
+    report_type: str | None = Field(default=None, alias="reportType")
+    event_date: str | None = Field(default=None, alias="eventDate")
+    latitude: float | None = None
+    longitude: float | None = None
+    happen_place: str | None = Field(default=None, alias="happenPlace")
+    description: str | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -34,6 +40,12 @@ class MatchResultItem(BaseModel):
     ranking_score: float | None = Field(default=None, alias="rankingScore")
     tag_score: float | None = Field(default=None, alias="tagScore")
     text_score: float | None = Field(default=None, alias="textScore")
+    location_score: float | None = Field(default=None, alias="locationScore")
+    time_score: float | None = Field(default=None, alias="timeScore")
+    spatiotemporal_score: float | None = Field(default=None, alias="spatiotemporalScore")
+    distance_km: float | None = Field(default=None, alias="distanceKm")
+    elapsed_days: int | None = Field(default=None, alias="elapsedDays")
+    location_method: str | None = Field(default=None, alias="locationMethod")
     phash_distance: int | None = Field(default=None, alias="phashDistance")
     near_duplicate: bool | None = Field(default=None, alias="nearDuplicate")
     matched_tags: dict[str, str] | None = Field(default=None, alias="matchedTags")

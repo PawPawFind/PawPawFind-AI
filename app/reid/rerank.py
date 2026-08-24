@@ -26,6 +26,11 @@ from app.reid.config import (
 )
 from app.reid.runtime import get_device
 from app.reid.search import QueryPack, SearchMatch, search_gallery
+from app.reid.spatiotemporal import (
+    canonical_report_type,
+    optional_float,
+    spatiotemporal_similarity,
+)
 
 TAG_FIELDS = (
     "sex",
@@ -36,6 +41,9 @@ TAG_FIELDS = (
     "tail_shape",
     "size",
     "distinctive_features",
+    "accessories",
+    "body_condition",
+    "behavior",
 )
 
 TAG_FIELD_WEIGHTS = {
@@ -47,6 +55,9 @@ TAG_FIELD_WEIGHTS = {
     "tail_shape": 0.8,
     "size": 0.5,
     "distinctive_features": 1.5,
+    "accessories": 1.2,
+    "body_condition": 0.7,
+    "behavior": 0.4,
 }
 
 TAG_ALIASES = {
@@ -182,9 +193,21 @@ def first_present(record: Mapping[str, Any], keys: Sequence[str]) -> Any:
     return ""
 
 
+def nested_location(raw: Mapping[str, Any], keys: Sequence[str]) -> Mapping[str, Any]:
+    for key in keys:
+        value = raw.get(key)
+        if isinstance(value, Mapping):
+            return value
+    return {}
+
+
 def normalize_query_metadata(raw: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
     raw = dict(raw or {})
+    location = nested_location(raw, ("lost_location", "lostLocation", "location"))
     return {
+        "report_type": canonical_report_type(
+            first_present(raw, ("report_type", "reportType", "type")), default="LOST"
+        ),
         "sex": split_tag_values(first_present(raw, ("sex", "sexCd", "gender")), field="sex"),
         "colors": split_tag_values(
             first_present(raw, ("colors", "color", "colorCd")), field="colors"
@@ -208,14 +231,39 @@ def normalize_query_metadata(raw: Optional[Mapping[str, Any]]) -> Dict[str, Any]
             first_present(raw, ("distinctive_features", "features", "feature_tags")),
             field="distinctive_features",
         ),
+        "accessories": split_tag_values(
+            first_present(raw, ("accessories", "wearing", "착용중")),
+            field="accessories",
+        ),
+        "body_condition": split_tag_values(
+            first_present(raw, ("body_condition", "bodyCondition", "몸상태")),
+            field="body_condition",
+        ),
+        "behavior": split_tag_values(
+            first_present(raw, ("behavior", "behaviour", "행동")),
+            field="behavior",
+        ),
         "description": text_value(first_present(raw, ("description", "free_text", "memo"))),
+        "lost_at": text_value(first_present(raw, ("lost_at", "lostAt", "eventDate", "missingAt"))),
+        "latitude": optional_float(
+            first_present(location, ("latitude", "lat")) or first_present(raw, ("latitude", "lat"))
+        ),
+        "longitude": optional_float(
+            first_present(location, ("longitude", "lng", "lon"))
+            or first_present(raw, ("longitude", "lng", "lon"))
+        ),
+        "address": text_value(
+            first_present(location, ("address", "roadAddress", "place"))
+            or first_present(raw, ("happenPlace", "address", "lostAddress"))
+        ),
     }
 
 
 def normalize_candidate_metadata(record: Mapping[str, Any]) -> Dict[str, Any]:
     description_parts = [text_value(record.get(key)) for key in SHELTER_DESCRIPTION_KEYS]
     description = " ".join(dict.fromkeys(part for part in description_parts if part))
-    return normalize_query_metadata(
+    location = nested_location(record, ("found_location", "foundLocation", "location"))
+    normalized = normalize_query_metadata(
         {
             "sex": first_present(record, ("sexCd", "sex", "gender")),
             "colors": first_present(record, ("colorCd", "colors", "color")),
@@ -227,9 +275,40 @@ def normalize_candidate_metadata(record: Mapping[str, Any]) -> Dict[str, Any]:
             "distinctive_features": first_present(
                 record, ("distinctive_features", "features", "feature_tags")
             ),
+            "accessories": first_present(record, ("accessories", "wearing", "착용중")),
+            "body_condition": first_present(record, ("body_condition", "bodyCondition", "몸상태")),
+            "behavior": first_present(record, ("behavior", "behaviour", "행동")),
             "description": description,
         }
     )
+    normalized.update(
+        {
+            "report_type": canonical_report_type(
+                first_present(record, ("report_type", "reportType", "candidateReportType")),
+                default="FOUND",
+            ),
+            "found_at": text_value(
+                first_present(
+                    record,
+                    ("found_at", "foundAt", "eventDate", "happenDt", "noticeSdt"),
+                )
+            ),
+            "latitude": optional_float(
+                first_present(location, ("latitude", "lat", "foundLat"))
+                or first_present(record, ("latitude", "lat", "foundLat", "happenLat"))
+            ),
+            "longitude": optional_float(
+                first_present(location, ("longitude", "lng", "lon", "foundLng"))
+                or first_present(record, ("longitude", "lng", "lon", "foundLng", "happenLng"))
+            ),
+            "address": text_value(
+                first_present(location, ("address", "roadAddress", "place"))
+                or first_present(record, ("happenPlace", "foundAddress", "address"))
+            ),
+        }
+    )
+    normalized["lost_at"] = ""
+    return normalized
 
 
 def metadata_description(metadata: Mapping[str, Any]) -> str:
@@ -243,6 +322,9 @@ def metadata_description(metadata: Mapping[str, Any]) -> str:
         "tail_shape": "꼬리",
         "size": "크기",
         "distinctive_features": "특징",
+        "accessories": "착용",
+        "body_condition": "몸상태",
+        "behavior": "행동",
     }
     for field in TAG_FIELDS:
         values = metadata.get(field, [])
@@ -297,7 +379,9 @@ def load_text_encoder() -> Tuple[Any, Any]:
     return _text_tokenizer, _text_model
 
 
-def average_pool_text(last_hidden_state: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+def average_pool_text(
+    last_hidden_state: torch.Tensor, attention_mask: torch.Tensor
+) -> torch.Tensor:
     mask = attention_mask[..., None].bool()
     hidden = last_hidden_state.masked_fill(~mask, 0.0)
     return hidden.sum(dim=1) / attention_mask.sum(dim=1, keepdim=True).clamp(min=1)
@@ -349,17 +433,33 @@ def active_rerank_weights(
     query_metadata: Mapping[str, Any],
     tag_scores: Sequence[Optional[float]],
     text_scores: Sequence[Optional[float]],
+    spatiotemporal_scores: Sequence[Optional[float]],
     weights: Mapping[str, float],
 ) -> Dict[str, float]:
-    active = {"image": max(float(weights.get("image", 0.0)), 0.0), "tags": 0.0, "text": 0.0}
+    active = {
+        "image": max(float(weights.get("image", 0.0)), 0.0),
+        "tags": 0.0,
+        "text": 0.0,
+        "location": 0.0,
+    }
     has_query_tags = any(query_metadata.get(field) for field in TAG_FIELDS)
     if has_query_tags and any(score is not None for score in tag_scores):
         active["tags"] = max(float(weights.get("tags", 0.0)), 0.0)
-    if text_value(query_metadata.get("description")) and any(score is not None for score in text_scores):
+    if text_value(query_metadata.get("description")) and any(
+        score is not None for score in text_scores
+    ):
         active["text"] = max(float(weights.get("text", 0.0)), 0.0)
+    has_query_spatiotemporal = (
+        query_metadata.get("latitude") is not None
+        or query_metadata.get("longitude") is not None
+        or text_value(query_metadata.get("address"))
+        or text_value(query_metadata.get("lost_at"))
+    )
+    if has_query_spatiotemporal and any(score is not None for score in spatiotemporal_scores):
+        active["location"] = max(float(weights.get("location", 0.0)), 0.0)
     total = sum(active.values())
     if total <= 0:
-        return {"image": 1.0, "tags": 0.0, "text": 0.0}
+        return {"image": 1.0, "tags": 0.0, "text": 0.0, "location": 0.0}
     return {key: value / total for key, value in active.items()}
 
 
@@ -372,15 +472,17 @@ def rerank_matches(
     normalized_query = normalize_query_metadata(query_metadata)
     candidates = [replace(match) for match in image_matches]
     if not candidates:
-        return [], {"weights": {"image": 1.0, "tags": 0.0, "text": 0.0}}
+        return [], {"weights": {"image": 1.0, "tags": 0.0, "text": 0.0, "location": 0.0}}
 
     candidate_metadata = [
         normalize_candidate_metadata(candidate_record(match, metadata)) for match in candidates
     ]
-    tag_details = [
-        structured_tag_similarity(normalized_query, item) for item in candidate_metadata
-    ]
+    tag_details = [structured_tag_similarity(normalized_query, item) for item in candidate_metadata]
     tag_scores = [detail[0] for detail in tag_details]
+    spatiotemporal_details = [
+        spatiotemporal_similarity(normalized_query, item) for item in candidate_metadata
+    ]
+    spatiotemporal_scores = [detail["score"] for detail in spatiotemporal_details]
 
     # 구조화 태그와 자유 문장의 효과를 분리해 측정하기 위해 텍스트 분기는
     # description끼리만 비교합니다. 성별/색상은 tag_score에서만 사용합니다.
@@ -405,9 +507,11 @@ def rerank_matches(
             print("text reranking disabled for this search:", repr(exc))
 
     effective_weights = active_rerank_weights(
-        normalized_query, tag_scores, text_scores, weights
+        normalized_query, tag_scores, text_scores, spatiotemporal_scores, weights
     )
-    for match, tag_detail, text_score in zip(candidates, tag_details, text_scores):
+    for match, tag_detail, text_score, spatiotemporal in zip(
+        candidates, tag_details, text_scores, spatiotemporal_details
+    ):
         tag_score, coverage, matched, conflicts = tag_detail
         image_unit_score = (float(match.visual_score) + 1.0) / 2.0
         # 후보 쪽 메타데이터가 비어 있으면 0점으로 벌주지 않고 이미지 점수를 유지합니다.
@@ -416,14 +520,24 @@ def rerank_matches(
         if tag_score is not None:
             tag_component = coverage * tag_score + (1.0 - coverage) * image_unit_score
         text_component = image_unit_score if text_score is None else text_score
+        spatiotemporal_component = (
+            image_unit_score if spatiotemporal["score"] is None else float(spatiotemporal["score"])
+        )
         ranking_score = (
             effective_weights["image"] * image_unit_score
             + effective_weights["tags"] * tag_component
             + effective_weights["text"] * text_component
+            + effective_weights["location"] * spatiotemporal_component
         )
         match.tag_score = tag_score
         match.tag_coverage = coverage
         match.text_score = text_score
+        match.location_score = spatiotemporal["location_score"]
+        match.time_score = spatiotemporal["time_score"]
+        match.spatiotemporal_score = spatiotemporal["score"]
+        match.distance_km = spatiotemporal["distance_km"]
+        match.elapsed_days = spatiotemporal["elapsed_days"]
+        match.location_method = spatiotemporal["location_method"]
         match.ranking_score = float(ranking_score)
         match.matched_tags = matched
         match.conflicting_tags = conflicts
@@ -486,15 +600,19 @@ def print_multimodal_report(
     reranked_matches: Sequence[SearchMatch],
     diagnostics: Mapping[str, Any],
 ) -> None:
-    print("\n=== v10 image-only vs metadata reranking ===")
+    print("\n=== v11 image-only vs metadata/location/time reranking ===")
     print("effective weights:", diagnostics.get("weights"))
     print("주의: ranking_score와 visual_score는 동일 개체 확률이 아닙니다.")
     for match in reranked_matches:
         tag_text = "-" if match.tag_score is None else f"{match.tag_score:.3f}"
         text_text = "-" if match.text_score is None else f"{match.text_score:.3f}"
+        location_text = (
+            "-" if match.spatiotemporal_score is None else f"{match.spatiotemporal_score:.3f}"
+        )
         print(
             f"{match.rank:02d}. ID={match.record_id} image_rank={match.image_rank} "
             f"visual={match.visual_score:.3f} tag={tag_text} text={text_text} "
+            f"where/when={location_text} "
             f"ranking={match.ranking_score:.3f} matched={list(match.matched_tags)}"
         )
     if image_matches and reranked_matches:
@@ -514,6 +632,16 @@ def match_to_backend_dict(match: SearchMatch) -> Dict[str, Any]:
         "tagSimilarity": None if match.tag_score is None else round(match.tag_score, 6),
         "tagCoverage": round(match.tag_coverage, 6),
         "textSimilarity": None if match.text_score is None else round(match.text_score, 6),
+        "locationSimilarity": (
+            None if match.location_score is None else round(match.location_score, 6)
+        ),
+        "timeSimilarity": None if match.time_score is None else round(match.time_score, 6),
+        "spatiotemporalSimilarity": (
+            None if match.spatiotemporal_score is None else round(match.spatiotemporal_score, 6)
+        ),
+        "distanceKm": None if match.distance_km is None else round(match.distance_km, 3),
+        "elapsedDays": match.elapsed_days,
+        "locationMethod": match.location_method,
         "rankingScore": None if match.ranking_score is None else round(match.ranking_score, 6),
         "rankingScoreIsProbability": False,
         "visualDisplayScore": round(100.0 * max(match.visual_score, 0.0), 1),

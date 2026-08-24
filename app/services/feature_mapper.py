@@ -6,6 +6,7 @@ from app.schemas.match import MatchRequest
 
 CATEGORY_TO_FIELD: dict[str, str] = {
     "성별": "sex",
+    "털색": "colors",
     "색상": "colors",
     "색": "colors",
     "무늬": "patterns",
@@ -14,6 +15,10 @@ CATEGORY_TO_FIELD: dict[str, str] = {
     "꼬리": "tail_shape",
     "크기": "size",
     "특징": "distinctive_features",
+    "눈/얼굴": "distinctive_features",
+    "착용 중": "accessories",
+    "몸 상태": "body_condition",
+    "행동": "behavior",
 }
 
 FIELD_TO_CATEGORY: dict[str, str] = {value: key for key, value in CATEGORY_TO_FIELD.items()}
@@ -29,7 +34,17 @@ def features_to_query_metadata(request: MatchRequest) -> dict[str, object]:
         "tail_shape": "",
         "size": "",
         "distinctive_features": [],
-        "description": "",
+        "accessories": [],
+        "body_condition": [],
+        "behavior": [],
+        "description": request.description or "",
+        "report_type": request.report_type or "LOST",
+        "lost_at": request.event_date or "",
+        "lost_location": {
+            "latitude": request.latitude,
+            "longitude": request.longitude,
+            "address": request.happen_place or "",
+        },
     }
 
     for feature in request.features:
@@ -41,7 +56,14 @@ def features_to_query_metadata(request: MatchRequest) -> dict[str, object]:
             features_list.append(f"{feature.category}:{feature.keyword}")
             continue
 
-        if field in {"colors", "patterns", "distinctive_features"}:
+        if field in {
+            "colors",
+            "patterns",
+            "distinctive_features",
+            "accessories",
+            "body_condition",
+            "behavior",
+        }:
             values = metadata[field]
             assert isinstance(values, list)
             values.append(feature.keyword)

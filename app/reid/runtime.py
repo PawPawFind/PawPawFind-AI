@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ _detector: Any | None = None
 _embed_dim: int | None = None
 _gallery_data: dict[str, Any] | None = None
 _gallery_meta: dict[str, dict[str, Any]] | None = None
+_rds_gallery_cache: dict[str, tuple[float, dict[str, Any], dict[str, dict[str, Any]]]] = {}
 
 
 def get_device():
@@ -95,10 +97,46 @@ def _get_gallery_rds(
     from app.reid.gallery_rds import gallery_response_to_arrays
     from app.services.backend_client import fetch_gallery_for_search
 
-    response = fetch_gallery_for_search(
-        species_ko=species_ko,
-        model_version=MODEL_VERSION,
-        preprocess_version=PREPROCESS_VERSION,
-        exclude_report_id=exclude_report_id,
+    ttl_seconds = max(float(os.environ.get("GALLERY_RDS_CACHE_TTL_SECONDS", "300")), 0.0)
+    now = time.monotonic()
+    cached = _rds_gallery_cache.get(species_ko)
+    if cached is None or cached[0] <= now:
+        with _gallery_lock:
+            cached = _rds_gallery_cache.get(species_ko)
+            if cached is None or cached[0] <= time.monotonic():
+                response = fetch_gallery_for_search(
+                    species_ko=species_ko,
+                    model_version=MODEL_VERSION,
+                    preprocess_version=PREPROCESS_VERSION,
+                    exclude_report_id=None,
+                )
+                gallery_data, gallery_meta = gallery_response_to_arrays(response)
+                cached = (time.monotonic() + ttl_seconds, gallery_data, gallery_meta)
+                _rds_gallery_cache[species_ko] = cached
+
+    _, gallery_data, gallery_meta = cached
+    if exclude_report_id is None:
+        return gallery_data, gallery_meta
+    return _without_report(gallery_data, gallery_meta, exclude_report_id)
+
+
+def _without_report(
+    gallery_data: dict[str, Any],
+    gallery_meta: dict[str, dict[str, Any]],
+    report_id: int,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    import numpy as np
+
+    gallery_ids = gallery_data["gallery_ids"]
+    keep = np.asarray(
+        [
+            str(gallery_meta[str(gallery_id)].get("candidate_report_id") or "") != str(report_id)
+            for gallery_id in gallery_ids
+        ],
+        dtype=bool,
     )
-    return gallery_response_to_arrays(response)
+    filtered_data = {key: value[keep] for key, value in gallery_data.items()}
+    filtered_meta = {
+        str(gallery_id): gallery_meta[str(gallery_id)] for gallery_id in gallery_ids[keep]
+    }
+    return filtered_data, filtered_meta
