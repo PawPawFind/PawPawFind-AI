@@ -2,6 +2,7 @@ import pytest
 
 from app.reid.spatiotemporal import (
     address_location_similarity,
+    address_units,
     location_similarity,
     spatiotemporal_similarity,
     time_similarity,
@@ -30,6 +31,12 @@ def test_address_location_similarity_requires_matching_parent_for_same_dong() ->
         )
         == 0.90
     )
+
+
+def test_address_location_similarity_parses_compact_korean_address() -> None:
+    compact = "서울특별시마포구중앙동"
+    assert address_units(compact) == ["서울특별시", "마포구", "중앙동"]
+    assert address_location_similarity(compact, compact) == 0.90
 
 
 def test_coordinate_location_score_decreases_with_distance() -> None:

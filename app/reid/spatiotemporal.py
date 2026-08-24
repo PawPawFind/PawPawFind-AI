@@ -78,7 +78,7 @@ def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 
 def address_units(address: Any) -> list[str]:
     normalized = unicodedata.normalize("NFKC", text_value(address))
-    pattern = r"[가-힣0-9]+(?:특별자치도|특별자치시|특별시|광역시|도|시|군|구|읍|면|동|리)"
+    pattern = r"[가-힣0-9]+?(?:특별자치도|특별자치시|특별시|광역시|도|시|군|구|읍|면|동|리)"
     return list(dict.fromkeys(re.findall(pattern, normalized)))
 
 
