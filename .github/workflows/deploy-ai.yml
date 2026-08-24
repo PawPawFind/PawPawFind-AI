@@ -20,7 +20,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate deploy secrets
+        run: |
+          test -n "${{ secrets.EC2_HOST }}" || (echo "Missing EC2_HOST (org/repo secret)" && exit 1)
+          test -n "${{ secrets.EC2_USER }}" || (echo "Missing EC2_USER" && exit 1)
+          test -n "${{ secrets.EC2_SSH_PRIVATE_KEY }}" || (echo "Missing EC2_SSH_PRIVATE_KEY" && exit 1)
 
       - name: Pack source (exclude venv/cache)
         run: |
@@ -30,7 +36,9 @@ jobs:
             --exclude=__pycache__ \
             --exclude=.pytest_cache \
             --exclude=.git \
+            --exclude=.ruff_cache \
             .
+          ls -lh ai-deploy.tgz
 
       - name: Upload bundle to EC2
         uses: appleboy/scp-action@v0.1.7
