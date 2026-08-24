@@ -144,6 +144,6 @@ def _classify_tags(tags: dict[str, object]) -> set[EnvironmentKind]:
         kinds.add(EnvironmentKind.ROAD)
     if tags.get("natural") == "water" or "waterway" in tags:
         kinds.add(EnvironmentKind.WATER)
-    if "railway" in tags or "barrier" in tags:
+    if "railway" in tags or tags.get("barrier") in SEARCH_AREA_CONFIG.blocking_barrier_values:
         kinds.add(EnvironmentKind.RAILWAY_BARRIER)
     return kinds

@@ -10,6 +10,7 @@ from app.search_area.environment import (
     EnvironmentKind,
     EnvironmentProviderError,
     StaticEnvironmentProvider,
+    parse_overpass_response,
 )
 from app.search_area.geo import GeoPoint, GridCell, generate_grid, offset_point
 from app.search_area.scoring import (
@@ -75,6 +76,24 @@ def test_major_road_and_railway_reduce_accessibility() -> None:
     )
     blocked = score_grid([cell], 1000, BehaviorType.ALOOF, BehaviorProfile(), barriers)[0]
     assert blocked.components.accessibility < safe.components.accessibility
+
+
+def test_non_blocking_barrier_does_not_receive_accessibility_penalty() -> None:
+    cell = GridCell(0, 0, ORIGIN, 0)
+    gate_environment = parse_overpass_response(
+        {
+            "elements": [
+                {
+                    "lat": ORIGIN.latitude,
+                    "lon": ORIGIN.longitude,
+                    "tags": {"barrier": "gate"},
+                }
+            ]
+        }
+    )
+    score = score_grid([cell], 1000, BehaviorType.ALOOF, BehaviorProfile(), gate_environment)[0]
+
+    assert score.components.accessibility == 1.0
 
 
 def test_adjacent_high_scoring_cells_are_clustered() -> None:

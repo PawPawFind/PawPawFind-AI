@@ -17,6 +17,14 @@ class SearchAreaHeuristicConfig:
     high_score_band: float = 12.0
     cluster_radius_base_meters: int = 100
     overlap_ratio: float = 0.6
+    blocking_barrier_values: tuple[str, ...] = (
+        "wall",
+        "fence",
+        "retaining_wall",
+        "city_wall",
+        "hedge",
+        "guard_rail",
+    )
     base_radius_by_size: tuple[tuple[str, int], ...] = (
         ("소형", 500),
         ("중형", 1000),

@@ -39,6 +39,24 @@ def test_parse_overpass_response_classifies_supported_features() -> None:
     assert data.features[2].kinds == {EnvironmentKind.FOOTPATH}
 
 
+@pytest.mark.parametrize(
+    "barrier", ["wall", "fence", "retaining_wall", "city_wall", "hedge", "guard_rail"]
+)
+def test_blocking_barriers_are_classified_as_movement_barriers(barrier: str) -> None:
+    data = parse_overpass_response(
+        {"elements": [{"lat": 37.5, "lon": 127.0, "tags": {"barrier": barrier}}]}
+    )
+    assert data.features[0].kinds == {EnvironmentKind.RAILWAY_BARRIER}
+
+
+@pytest.mark.parametrize("barrier", ["gate", "lift_gate", "bollard", "kerb"])
+def test_passage_facilities_are_not_classified_as_railway_barriers(barrier: str) -> None:
+    data = parse_overpass_response(
+        {"elements": [{"lat": 37.5, "lon": 127.0, "tags": {"barrier": barrier}}]}
+    )
+    assert data.features == ()
+
+
 @pytest.mark.parametrize("payload", [None, {}, {"elements": "invalid"}])
 def test_parse_overpass_response_rejects_invalid_shape(payload: object) -> None:
     with pytest.raises(EnvironmentProviderError):
