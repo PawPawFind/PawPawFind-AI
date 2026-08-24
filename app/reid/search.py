@@ -62,6 +62,12 @@ class SearchMatch:
     tag_score: Optional[float] = None
     tag_coverage: float = 0.0
     text_score: Optional[float] = None
+    location_score: Optional[float] = None
+    time_score: Optional[float] = None
+    spatiotemporal_score: Optional[float] = None
+    distance_km: Optional[float] = None
+    elapsed_days: Optional[int] = None
+    location_method: str = "unavailable"
     ranking_score: Optional[float] = None
     matched_tags: Tuple[str, ...] = ()
     conflicting_tags: Tuple[str, ...] = ()

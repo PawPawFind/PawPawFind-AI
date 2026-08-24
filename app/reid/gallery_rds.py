@@ -18,6 +18,9 @@ def features_to_gallery_metadata(features: list[Any]) -> dict[str, object]:
         "tail_shape": "",
         "size": "",
         "distinctive_features": [],
+        "accessories": [],
+        "body_condition": [],
+        "behavior": [],
         "description": "",
     }
     for feature in features:
@@ -33,7 +36,14 @@ def features_to_gallery_metadata(features: list[Any]) -> dict[str, object]:
             assert isinstance(values, list)
             values.append(f"{category}:{keyword}")
             continue
-        if field in {"colors", "patterns", "distinctive_features"}:
+        if field in {
+            "colors",
+            "patterns",
+            "distinctive_features",
+            "accessories",
+            "body_condition",
+            "behavior",
+        }:
             values = metadata[field]
             assert isinstance(values, list)
             values.append(keyword)
@@ -100,6 +110,12 @@ def report_item_to_metadata(item: GalleryReportItem) -> dict[str, Any]:
         "candidate_type": "REPORT",
         "candidate_report_id": item.report_id,
         **tag_metadata,
+        "reportType": item.report_type or "FOUND",
+        "eventDate": item.event_date or "",
+        "latitude": item.latitude,
+        "longitude": item.longitude,
+        "happenPlace": item.happen_place or "",
+        "description": item.description or "",
     }
 
 

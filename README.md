@@ -43,6 +43,30 @@ curl http://127.0.0.1:8000/health
 {"status":"ok"}
 ```
 
+## V11 위치·시간 재정렬
+
+기존 `/match` 요청과 호환되며 다음 필드는 선택값입니다.
+
+```json
+{
+  "reportId": 1,
+  "species": "강아지",
+  "photoUrls": ["https://example.com/query.jpg"],
+  "features": [{"category": "털색", "keyword": "흰색"}],
+  "reportType": "LOST",
+  "eventDate": "2026-08-01",
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "happenPlace": "서울특별시 마포구",
+  "description": null
+}
+```
+
+후보에도 좌표가 있으면 `distanceKm`를 계산하고, 없으면 `happenPlace`의 행정구역을
+비교합니다. 위치·시간 정보가 없으면 해당 가중치는 자동으로 제외됩니다. 모든 점수는
+후보 정렬용이며 동일 개체 확률이 아닙니다. 메모리가 작은 서버에서는 자유문장 E5
+재정렬을 기본적으로 비활성화합니다.
+
 ## 테스트와 코드 품질 검사
 
 ```bash
