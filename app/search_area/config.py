@@ -1,0 +1,44 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class SearchAreaHeuristicConfig:
+    """Replaceable initial heuristics; these values are not learned parameters."""
+
+    algorithm_version: str = "HEURISTIC_V1"
+    grid_size_meters: int = 200
+    min_search_radius_meters: int = 300
+    max_search_radius_meters: int = 3000
+    min_area_radius_meters: int = 150
+    max_area_radius_meters: int = 500
+    max_areas: int = 3
+    base_radius_by_size: tuple[tuple[str, int], ...] = (
+        ("소형", 500),
+        ("중형", 1000),
+        ("대형", 1500),
+    )
+    elapsed_time_multipliers: tuple[tuple[float, float], ...] = (
+        (6.0, 0.6),
+        (24.0, 1.0),
+        (72.0, 1.4),
+        (float("inf"), 1.8),
+    )
+    activity_multipliers: tuple[tuple[str, float], ...] = (
+        ("LOW", 0.8),
+        ("MEDIUM", 1.0),
+        ("HIGH", 1.25),
+        ("UNKNOWN", 1.0),
+    )
+    limited_mobility_multiplier: float = 0.5
+    noise_escape_multiplier: float = 1.1
+    chase_escape_multiplier: float = 1.2
+    score_weights: tuple[tuple[str, float], ...] = (
+        ("distance", 0.30),
+        ("behavior_environment", 0.30),
+        ("corridor", 0.20),
+        ("accessibility", 0.10),
+        ("event_context", 0.10),
+    )
+
+
+SEARCH_AREA_CONFIG = SearchAreaHeuristicConfig()
