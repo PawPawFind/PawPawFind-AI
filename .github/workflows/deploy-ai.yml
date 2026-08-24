@@ -30,7 +30,8 @@ jobs:
 
       - name: Pack source (exclude venv/cache)
         run: |
-          tar czf ai-deploy.tgz \
+          # Write archive outside the tree so tar does not see its own output grow.
+          tar czf /tmp/ai-deploy.tgz \
             --exclude=.venv \
             --exclude=cache \
             --exclude=__pycache__ \
@@ -38,6 +39,7 @@ jobs:
             --exclude=.git \
             --exclude=.ruff_cache \
             .
+          mv /tmp/ai-deploy.tgz ./ai-deploy.tgz
           ls -lh ai-deploy.tgz
 
       - name: Upload bundle to EC2
