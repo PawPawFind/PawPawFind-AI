@@ -50,28 +50,45 @@ class StaticEnvironmentProvider:
 
 class OverpassEnvironmentProvider:
     source = "OPENSTREETMAP_OVERPASS"
+    # overpass-api.de rejects anonymous/default python-httpx User-Agents with HTTP 406.
+    DEFAULT_USER_AGENT = (
+        "PawPawFind-AI/1.0 (search-areas; https://github.com/PawPawFind/PawPawFind-AI)"
+    )
 
     def __init__(
         self,
         url: str = "https://overpass-api.de/api/interpreter",
         timeout_seconds: float = 10.0,
         client: httpx.AsyncClient | None = None,
+        user_agent: str = DEFAULT_USER_AGENT,
     ) -> None:
         self.url = url
         self.timeout_seconds = timeout_seconds
         self._client = client
+        self.user_agent = user_agent
+
+    def _request_headers(self) -> dict[str, str]:
+        return {"User-Agent": self.user_agent}
 
     async def fetch(self, center: GeoPoint, radius_meters: int) -> EnvironmentData:
         bounded_radius = min(radius_meters, SEARCH_AREA_CONFIG.max_search_radius_meters)
         if bounded_radius <= 0:
             raise ValueError("조회 반경은 양수여야 합니다.")
         query = self._build_query(center, bounded_radius)
+        headers = self._request_headers()
         try:
             if self._client is None:
-                async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                async with httpx.AsyncClient(
+                    timeout=self.timeout_seconds,
+                    headers=headers,
+                ) as client:
                     response = await client.post(self.url, data={"data": query})
             else:
-                response = await self._client.post(self.url, data={"data": query})
+                response = await self._client.post(
+                    self.url,
+                    data={"data": query},
+                    headers=headers,
+                )
             response.raise_for_status()
             payload = response.json()
         except (httpx.TimeoutException, httpx.HTTPError, ValueError) as exc:

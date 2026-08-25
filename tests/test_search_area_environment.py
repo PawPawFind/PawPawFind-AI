@@ -68,6 +68,7 @@ def test_parse_overpass_response_rejects_invalid_shape(payload: object) -> None:
 @pytest.mark.anyio
 async def test_provider_uses_bounded_radius_and_parses_response() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("User-Agent") == OverpassEnvironmentProvider.DEFAULT_USER_AGENT
         query = parse_qs(request.content.decode())["data"][0]
         assert "around:3000" in query
         assert "[timeout:10]" in query
@@ -85,6 +86,27 @@ async def test_provider_uses_bounded_radius_and_parses_response() -> None:
         data = await provider.fetch(GeoPoint(37.5, 127.0), 5000)
 
     assert data.features[0].kinds == {EnvironmentKind.BUILDING_RESIDENTIAL}
+
+
+@pytest.mark.anyio
+async def test_provider_sends_identifying_user_agent() -> None:
+    seen: dict[str, str] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["ua"] = request.headers.get("User-Agent", "")
+        return httpx.Response(
+            200,
+            json={"elements": [{"lat": 37.5, "lon": 127.0, "tags": {"building": "yes"}}]},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = OverpassEnvironmentProvider(
+            client=client,
+            user_agent="PawPawFind-AI/test (search-areas)",
+        )
+        await provider.fetch(GeoPoint(37.5, 127.0), 500)
+
+    assert seen["ua"] == "PawPawFind-AI/test (search-areas)"
 
 
 @pytest.mark.anyio
