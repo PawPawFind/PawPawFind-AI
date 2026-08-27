@@ -71,8 +71,11 @@ def test_post_search_areas_returns_camel_case_contract() -> None:
     assert body["estimatedRadiusMeters"] == 1375
     assert body["environmentSource"] == "FIXED_TEST_DATA"
     assert body["fallbackUsed"] is False
-    assert 1 <= len(body["areas"]) <= 3
-    assert body["areas"][0]["rank"] == 1
+    assert 2 <= len(body["areas"]) <= 3
+    assert [area["rank"] for area in body["areas"]] == list(range(1, len(body["areas"]) + 1))
+    assert [area["priorityScore"] for area in body["areas"]] == sorted(
+        (area["priorityScore"] for area in body["areas"]), reverse=True
+    )
     assert "priorityScore" in body["areas"][0]
     assert "radiusMeters" in body["areas"][0]
     assert "reasonCodes" in body["areas"][0]

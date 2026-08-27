@@ -11,6 +11,7 @@ class SearchAreaHeuristicConfig:
     max_search_radius_meters: int = 3000
     min_area_radius_meters: int = 150
     max_area_radius_meters: int = 500
+    min_areas: int = 2
     max_areas: int = 3
     environment_influence_meters: int = 300
     environment_bucket_size_meters: int = 300

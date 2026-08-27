@@ -70,7 +70,9 @@ curl http://127.0.0.1:8000/health
 ## 추천 수색 영역 API V1
 
 `POST /search-areas`는 실종 강아지의 마지막 목격 정보와 행동 프로필을 바탕으로
-카카오맵에 표시할 수 있는 중심 좌표와 반경을 최대 3개 반환합니다. `priorityScore`는
+카카오맵에 표시할 수 있는 중심 좌표와 반경을 최소 2개, 최대 3개 반환합니다.
+3순위는 다른 추천 영역과 충분히 분리된 독립 유효 후보가 있을 때만 반환합니다.
+`priorityScore`는
 실제 발견 확률이 아니라 `HEURISTIC_V1`의 **수색 우선점수**입니다.
 
 요청 예시:
@@ -116,6 +118,14 @@ curl http://127.0.0.1:8000/health
       "priorityScore": 84,
       "reasonCodes": ["FEARFUL_HIDE", "GREEN_SPACE", "LOW_TRAFFIC"],
       "reason": "두려움이 강한 행동 특성 및 주변 녹지와 이동 가능 경로를 고려한 우선 수색 영역입니다."
+    },
+    {
+      "rank": 2,
+      "center": {"latitude": 37.5662, "longitude": 126.979},
+      "radiusMeters": 150,
+      "priorityScore": 78,
+      "reasonCodes": ["FEARFUL_HIDE", "WALKING_CORRIDOR", "LOW_TRAFFIC"],
+      "reason": "두려움이 강한 행동 특성 및 보행로와 연결된 이동 경로를 고려한 우선 수색 영역입니다."
     }
   ]
 }
@@ -139,7 +149,8 @@ LOW 0.8, MEDIUM 1.0, HIGH 1.25, UNKNOWN 1.0을 적용합니다. 이동 제한은
 환경 데이터는 OpenStreetMap Overpass API에서 수집합니다. URL은 `OVERPASS_API_URL`,
 timeout(초)은 `OVERPASS_TIMEOUT_SECONDS`로 설정할 수 있습니다. timeout, HTTP 오류,
 잘못된 JSON 또는 빈 데이터가 발생하면 요청 전체를 실패시키지 않고 마지막 목격 위치
-중심의 보수적인 영역을 최소 1개 반환합니다. 이때 `fallbackUsed`는 `true`,
+중심의 핵심 수색 영역과 같은 중심의 더 넓은 확장 수색 영역 2개를 반환합니다. 이때
+`fallbackUsed`는 `true`,
 `environmentSource`는 `UNAVAILABLE`이며 `assumptions`와 `reasonCodes`에도 fallback
 사실을 표시합니다.
 

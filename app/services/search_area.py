@@ -21,7 +21,7 @@ from app.search_area.heuristics import (
     calculate_search_radius,
     classify_behavior,
 )
-from app.search_area.scoring import cluster_scored_cells, remove_overlapping_candidates, score_grid
+from app.search_area.scoring import score_grid, select_area_candidates
 
 FALLBACK_ASSUMPTION = "주변 환경 데이터를 사용할 수 없어 마지막 목격 위치를 중심으로 추천했습니다."
 
@@ -50,8 +50,8 @@ class SearchAreaRecommendationService:
                 request.behavior_profile,
                 environment,
             )
-            candidates = remove_overlapping_candidates(cluster_scored_cells(scored))
-            if not candidates:
+            candidates = select_area_candidates(scored)
+            if len(candidates) < SEARCH_AREA_CONFIG.min_areas:
                 raise EnvironmentProviderError("유효한 추천 영역이 없습니다.")
         except EnvironmentProviderError:
             assumptions.append(FALLBACK_ASSUMPTION)
@@ -88,6 +88,14 @@ def _fallback_response(
     search_radius: int,
     assumptions: list[str],
 ) -> SearchAreaResponse:
+    core_radius = min(
+        SEARCH_AREA_CONFIG.max_area_radius_meters - 100,
+        max(SEARCH_AREA_CONFIG.min_area_radius_meters, round(search_radius / 4)),
+    )
+    expanded_radius = min(
+        SEARCH_AREA_CONFIG.max_area_radius_meters,
+        max(core_radius + 100, round(search_radius / 3)),
+    )
     return SearchAreaResponse(
         reportId=request.report_id,
         algorithmVersion=SEARCH_AREA_CONFIG.algorithm_version,
@@ -103,17 +111,28 @@ def _fallback_response(
                     latitude=request.latitude,
                     longitude=request.longitude,
                 ),
-                radiusMeters=min(
-                    SEARCH_AREA_CONFIG.max_area_radius_meters,
-                    max(SEARCH_AREA_CONFIG.min_area_radius_meters, round(search_radius / 4)),
-                ),
+                radiusMeters=core_radius,
                 priorityScore=50,
                 reasonCodes=["ENVIRONMENT_FALLBACK", "LAST_SEEN_LOCATION"],
                 reason=(
                     "환경 데이터를 사용할 수 없어 마지막 목격 위치 주변을 "
                     "우선 수색 영역으로 제안합니다."
                 ),
-            )
+            ),
+            RecommendedSearchArea(
+                rank=2,
+                center=SearchAreaCenter(
+                    latitude=request.latitude,
+                    longitude=request.longitude,
+                ),
+                radiusMeters=expanded_radius,
+                priorityScore=40,
+                reasonCodes=["ENVIRONMENT_FALLBACK", "EXPANDED_SEARCH_RADIUS"],
+                reason=(
+                    "환경 데이터를 사용할 수 없어 마지막 목격 위치 주변으로 "
+                    "범위를 넓힌 확장 수색 영역입니다."
+                ),
+            ),
         ],
     )
 

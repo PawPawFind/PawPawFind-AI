@@ -21,6 +21,7 @@ from app.search_area.scoring import (
     cluster_scored_cells,
     remove_overlapping_candidates,
     score_grid,
+    select_area_candidates,
 )
 from app.services.search_area import SearchAreaRecommendationService
 
@@ -184,6 +185,49 @@ def test_overlapping_lower_ranked_candidates_are_removed_and_limited() -> None:
     assert [item.priority_score for item in selected] == [90, 70, 60]
 
 
+def scored_cell(row: int, column: int, score: float) -> ScoredCell:
+    components = ScoreComponents(1, 1, 1, 1, 1)
+    return ScoredCell(
+        GridCell(
+            row,
+            column,
+            offset_point(ORIGIN, row * 200, column * 200),
+            (row**2 + column**2) ** 0.5 * 200,
+        ),
+        score,
+        components,
+        frozenset({EnvironmentKind.GREEN_SPACE}) if column == 0 else frozenset(),
+    )
+
+
+def test_continuous_score_cluster_is_split_into_two_distinct_representatives() -> None:
+    scored = [scored_cell(0, 0, 90), scored_cell(0, 1, 89), scored_cell(0, 2, 88)]
+
+    selected = select_area_candidates(scored)
+
+    assert len(selected) == 2
+    assert selected[0] is not selected[1]
+    assert selected[0].center != selected[1].center
+    assert selected[0].kinds != selected[1].kinds
+    assert [item.priority_score for item in selected] == [90, 89]
+
+
+@pytest.mark.parametrize("count", [2, 3, 4])
+def test_separate_valid_clusters_return_top_candidates_up_to_three(count: int) -> None:
+    scored = [scored_cell(index * 5, 0, 90 - index) for index in range(count)]
+
+    selected = select_area_candidates(scored)
+
+    assert len(selected) == min(count, 3)
+    assert [item.priority_score for item in selected] == list(range(90, 90 - min(count, 3), -1))
+
+
+def test_candidate_selection_is_deterministic() -> None:
+    scored = [scored_cell(0, 0, 90), scored_cell(0, 1, 89), scored_cell(0, 2, 88)]
+
+    assert select_area_candidates(scored) == select_area_candidates(scored)
+
+
 class FailingProvider:
     async def fetch(self, center: GeoPoint, radius_meters: int) -> EnvironmentData:
         raise EnvironmentProviderError("failed")
@@ -219,7 +263,7 @@ async def test_service_uses_injected_provider_and_returns_ranked_areas() -> None
 
     assert response.fallback_used is False
     assert response.environment_source == "FIXED_TEST_DATA"
-    assert 1 <= len(response.areas) <= 3
+    assert 2 <= len(response.areas) <= 3
     assert [area.rank for area in response.areas] == list(range(1, len(response.areas) + 1))
     assert [area.priority_score for area in response.areas] == sorted(
         (area.priority_score for area in response.areas), reverse=True
@@ -235,6 +279,16 @@ async def test_service_returns_last_seen_fallback_without_network() -> None:
 
     assert response.fallback_used is True
     assert response.environment_source == "UNAVAILABLE"
-    assert len(response.areas) == 1
+    assert len(response.areas) == 2
     assert response.areas[0].center.latitude == ORIGIN.latitude
+    assert response.areas[0].center == response.areas[1].center
+    assert response.areas[0].radius_meters < response.areas[1].radius_meters
+    assert response.areas[0].priority_score > response.areas[1].priority_score
     assert response.areas[0].reason_codes == ["ENVIRONMENT_FALLBACK", "LAST_SEEN_LOCATION"]
+    assert response.areas[1].reason_codes == [
+        "ENVIRONMENT_FALLBACK",
+        "EXPANDED_SEARCH_RADIUS",
+    ]
+    assert "환경 데이터를 사용할 수 없어" in response.areas[1].reason
+    assert "확장 수색" in response.areas[1].reason
+    assert all(150 <= area.radius_meters <= 500 for area in response.areas)
