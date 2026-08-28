@@ -217,16 +217,57 @@ def remove_overlapping_candidates(
 ) -> list[AreaCandidate]:
     selected: list[AreaCandidate] = []
     for candidate in sorted(candidates, key=lambda item: -item.priority_score):
-        overlaps = any(
-            distance_meters(candidate.center, existing.center)
-            < config.overlap_ratio * (candidate.radius_meters + existing.radius_meters)
-            for existing in selected
-        )
+        overlaps = any(_candidates_overlap(candidate, existing, config) for existing in selected)
         if not overlaps:
             selected.append(candidate)
         if len(selected) == config.max_areas:
             break
     return selected
+
+
+def select_area_candidates(
+    scored_cells: list[ScoredCell],
+    config: SearchAreaHeuristicConfig = SEARCH_AREA_CONFIG,
+) -> list[AreaCandidate]:
+    """Prefer clustered candidates, splitting a lone cluster into local representatives."""
+    clustered = cluster_scored_cells(scored_cells, config)
+    selected = remove_overlapping_candidates(clustered, config)
+    if len(selected) >= config.min_areas:
+        return selected
+
+    representatives: list[AreaCandidate] = []
+    for item in sorted(
+        scored_cells,
+        key=lambda scored: (
+            -scored.priority_score,
+            scored.cell.row,
+            scored.cell.column,
+            scored.cell.center.latitude,
+            scored.cell.center.longitude,
+        ),
+    ):
+        candidate = AreaCandidate(
+            center=item.cell.center,
+            radius_meters=config.min_area_radius_meters,
+            priority_score=round(item.priority_score),
+            kinds=item.nearby_kinds,
+        )
+        if any(_candidates_overlap(candidate, existing, config) for existing in representatives):
+            continue
+        representatives.append(candidate)
+        if len(representatives) == config.min_areas:
+            return representatives
+    return representatives
+
+
+def _candidates_overlap(
+    candidate: AreaCandidate,
+    existing: AreaCandidate,
+    config: SearchAreaHeuristicConfig,
+) -> bool:
+    return distance_meters(candidate.center, existing.center) < config.overlap_ratio * (
+        candidate.radius_meters + existing.radius_meters
+    )
 
 
 def _clamp01(value: float) -> float:
