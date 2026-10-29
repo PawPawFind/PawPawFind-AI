@@ -27,6 +27,8 @@ class ScoredCell:
     priority_score: float
     components: ScoreComponents
     nearby_kinds: frozenset[EnvironmentKind]
+    behavior_kind: EnvironmentKind | None = None
+    corridor_kind: EnvironmentKind | None = None
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,7 @@ class AreaCandidate:
     radius_meters: int
     priority_score: int
     kinds: frozenset[EnvironmentKind]
+    cells: tuple[ScoredCell, ...] = ()
 
 
 class EnvironmentSpatialIndex:
@@ -208,7 +211,7 @@ def _cluster_candidate(
     radius = max(config.min_area_radius_meters, min(config.max_area_radius_meters, radius))
     kinds = frozenset(kind for item in cluster for kind in item.nearby_kinds)
     score = round(sum(item.priority_score for item in cluster) / len(cluster))
-    return AreaCandidate(center, radius, score, kinds)
+    return AreaCandidate(center, radius, score, kinds, tuple(cluster))
 
 
 def remove_overlapping_candidates(
@@ -251,6 +254,7 @@ def select_area_candidates(
             radius_meters=config.min_area_radius_meters,
             priority_score=round(item.priority_score),
             kinds=item.nearby_kinds,
+            cells=(item,),
         )
         if any(_candidates_overlap(candidate, existing, config) for existing in representatives):
             continue
@@ -276,3 +280,32 @@ def _clamp01(value: float) -> float:
 
 def _clamp(value: float, minimum: float, maximum: float) -> float:
     return max(minimum, min(maximum, value))
+
+
+def candidate_contributions(
+    candidate: AreaCandidate,
+    config: SearchAreaHeuristicConfig = SEARCH_AREA_CONFIG,
+) -> dict[str, float]:
+    """Same arithmetic mean of member cells used by the existing candidate score."""
+    if not candidate.cells:
+        raise ValueError("점수 근거를 계산할 구성 격자가 없습니다.")
+    return {
+        name: sum(getattr(cell.components, name) for cell in candidate.cells)
+        / len(candidate.cells)
+        * weight
+        * 100
+        for name, weight in config.score_weights
+    }
+
+
+def rounded_contributions(candidate: AreaCandidate) -> dict[str, int]:
+    """Largest remainder; ties follow config order. Preserve V1 round(mean(score))."""
+    values = candidate_contributions(candidate)
+    result = {name: math.floor(value) for name, value in values.items()}
+    remaining = candidate.priority_score - sum(result.values())
+    order = sorted(values, key=lambda name: -(values[name] - result[name]))
+    if not 0 <= remaining <= len(order):
+        raise ValueError("후보 점수와 구성 격자 기여점수가 일치하지 않습니다.")
+    for name in order[:remaining]:
+        result[name] += 1
+    return result
