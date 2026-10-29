@@ -1,0 +1,176 @@
+{
+  "reportId": 1,
+  "comparedAt": "2026-10-29T12:00:00+09:00",
+  "baseline": {
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "FEARFUL",
+    "estimatedRadiusMeters": 1000,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 92,
+        "reasonCodes": [
+          "FEARFUL_HIDE",
+          "GREEN_SPACE",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "두려움이 강한 행동 특성 및 주변 녹지와 이동 가능 경로을 고려한 우선 수색 영역입니다.",
+        "scoreBreakdown": {
+          "distance": 30,
+          "behaviorEnvironment": 30,
+          "corridor": 14,
+          "accessibility": 10,
+          "eventContext": 8
+        }
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.564701,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 86,
+        "reasonCodes": [
+          "FEARFUL_HIDE",
+          "GREEN_SPACE",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "두려움이 강한 행동 특성 및 주변 녹지와 이동 가능 경로을 고려한 우선 수색 영역입니다.",
+        "scoreBreakdown": {
+          "distance": 24,
+          "behaviorEnvironment": 30,
+          "corridor": 14,
+          "accessibility": 10,
+          "eventContext": 8
+        }
+      }
+    ]
+  },
+  "improved": {
+    "algorithmVersion": "HEURISTIC_V2",
+    "behaviorType": "FEARFUL",
+    "estimatedRadiusMeters": 1000,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 81,
+        "reasonCodes": [
+          "DISTANCE_FROM_LAST_SEEN",
+          "BEHAVIOR_NEAR_GREEN_SPACE",
+          "CORRIDOR_NEAR_GREEN_SPACE"
+        ],
+        "reason": "실종 위치와의 거리가 우선점수에 반영되었습니다. 두려움 관련 행동 특성을 고려한 행동·환경 적합도에 구성 격자와 녹지 대표점의 가까운 거리가 반영되었습니다. 두려움 관련 행동 특성을 고려한 이동 통로 관련 점수에 구성 격자와 녹지 대표점의 가까운 거리가 반영되었습니다. 우선 수색을 위한 참고 정보입니다.",
+        "scoreBreakdown": {
+          "distance": 30,
+          "behaviorEnvironment": 23,
+          "corridor": 10,
+          "accessibility": 10,
+          "eventContext": 8
+        }
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.568299,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 68,
+        "reasonCodes": [
+          "DISTANCE_FROM_LAST_SEEN",
+          "BEHAVIOR_NEAR_GREEN_SPACE",
+          "CORRIDOR_NEAR_GREEN_SPACE"
+        ],
+        "reason": "실종 위치와의 거리가 우선점수에 반영되었습니다. 두려움 관련 행동 특성을 고려한 행동·환경 적합도에 구성 격자와 녹지 대표점의 가까운 거리가 반영되었습니다. 두려움 관련 행동 특성을 고려한 이동 통로 관련 점수에 구성 격자와 녹지 대표점의 가까운 거리가 반영되었습니다. 우선 수색을 위한 참고 정보입니다.",
+        "scoreBreakdown": {
+          "distance": 24,
+          "behaviorEnvironment": 18,
+          "corridor": 8,
+          "accessibility": 10,
+          "eventContext": 8
+        }
+      }
+    ]
+  },
+  "comparison": {
+    "fallbackUsed": false,
+    "summary": "추천 영역 2개 → 2개. 동일 순위 중심 이동 최대 400.1m, 점수 변화 -18~-11점. 동일 순위 비교는 동일 물리 영역의 추적이 아니며 점수 차이는 정확도 차이를 뜻하지 않습니다.",
+    "areaCountBefore": 2,
+    "areaCountAfter": 2,
+    "rankChanges": [
+      {
+        "rank": 1,
+        "status": "BOTH",
+        "beforeCenter": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "afterCenter": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "centerShiftMeters": 0.0,
+        "beforeRadiusMeters": 150,
+        "afterRadiusMeters": 150,
+        "beforePriorityScore": 92,
+        "afterPriorityScore": 81,
+        "scoreDelta": -11,
+        "addedReasonCodes": [
+          "DISTANCE_FROM_LAST_SEEN",
+          "BEHAVIOR_NEAR_GREEN_SPACE",
+          "CORRIDOR_NEAR_GREEN_SPACE"
+        ],
+        "removedReasonCodes": [
+          "FEARFUL_HIDE",
+          "GREEN_SPACE",
+          "LOW_TRAFFIC"
+        ]
+      },
+      {
+        "rank": 2,
+        "status": "BOTH",
+        "beforeCenter": {
+          "latitude": 37.564701,
+          "longitude": 126.978
+        },
+        "afterCenter": {
+          "latitude": 37.568299,
+          "longitude": 126.978
+        },
+        "centerShiftMeters": 400.08,
+        "beforeRadiusMeters": 150,
+        "afterRadiusMeters": 150,
+        "beforePriorityScore": 86,
+        "afterPriorityScore": 68,
+        "scoreDelta": -18,
+        "addedReasonCodes": [
+          "DISTANCE_FROM_LAST_SEEN",
+          "BEHAVIOR_NEAR_GREEN_SPACE",
+          "CORRIDOR_NEAR_GREEN_SPACE"
+        ],
+        "removedReasonCodes": [
+          "FEARFUL_HIDE",
+          "GREEN_SPACE",
+          "LOW_TRAFFIC"
+        ]
+      }
+    ]
+  }
+}
