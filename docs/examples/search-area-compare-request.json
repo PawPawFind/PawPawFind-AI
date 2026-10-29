@@ -1,0 +1,19 @@
+{
+  "reportId": 1,
+  "species": "강아지",
+  "size": "중형",
+  "eventDate": "2026-10-28",
+  "eventHour": 12,
+  "latitude": 37.5665,
+  "longitude": 126.978,
+  "happenPlace": null,
+  "description": null,
+  "behaviorProfile": {
+    "activityLevel": "UNKNOWN",
+    "strangerResponse": "UNKNOWN",
+    "noiseSensitivity": "HIGH",
+    "chaseTendency": "UNKNOWN",
+    "mobility": "UNKNOWN",
+    "escapeCause": "UNKNOWN"
+  }
+}

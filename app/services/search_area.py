@@ -5,6 +5,7 @@ from app.schemas.search_area import (
     BehaviorType,
     RecommendedSearchArea,
     SearchAreaCenter,
+    SearchAreaCompareResponse,
     SearchAreaRequest,
     SearchAreaResponse,
 )
@@ -34,6 +35,11 @@ class SearchAreaRecommendationService:
     ) -> None:
         self.environment_provider = environment_provider
         self.now_provider = now_provider or (lambda: datetime.now(SEOUL_TIMEZONE))
+
+    async def compare(self, request: SearchAreaRequest) -> SearchAreaCompareResponse:
+        from app.search_area.comparison import compare_search_areas
+
+        return await compare_search_areas(request, self.environment_provider, self.now_provider)
 
     async def recommend(self, request: SearchAreaRequest) -> SearchAreaResponse:
         behavior_type = classify_behavior(request.behavior_profile)

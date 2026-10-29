@@ -172,3 +172,21 @@ Ruff로 코드를 포맷하려면 다음 명령을 사용합니다.
 ```bash
 uv run ruff format .
 ```
+
+## HEURISTIC_V2 및 V1/V2 비교 API
+
+`POST /search-areas/compare`는 기존 `SearchAreaRequest`를 받아 같은 기준 시각·환경 데이터로
+`HEURISTIC_V1`(baseline)과 `HEURISTIC_V2`(improved)를 한 번에 비교합니다.
+기존 `POST /search-areas`와 V1 동작은 유지합니다.
+
+V2는 OSM Feature 대표점까지의 거리로 `max(0, 1 - d / 300m)` 감쇠를 적용합니다.
+기존 행동별 선호도, 가중치 30/30/20/10/10, 격자·반경·영역 선정 정책을 재사용합니다.
+비교 응답의 각 영역은 실제 구성 격자에서 집계한 `scoreBreakdown`을 제공합니다.
+표시용 기여점수 합계는 기존 방식으로 계산한 `priorityScore`와 같습니다.
+환경 조회는 요청당 한 번 수행하며 실패 시 양쪽 모두 기존 fallback과 null breakdown을 반환합니다.
+
+[알고리즘·반올림·DTO·추천 이유·Frontend 표시 정책](docs/search-area-v2.md),
+[실제 고정 요청](docs/examples/search-area-compare-request.json),
+[실제 고정 응답](docs/examples/search-area-compare-response.json)을 확인하세요.
+점수는 발견 확률이 아닌 수색 우선순위이며, V1/V2 점수 차이는 정확도 향상을 의미하지 않습니다.
+실제 이동 경로를 계산하지 않고, 실제 발견 데이터 확보 후 추가 평가가 필요합니다.

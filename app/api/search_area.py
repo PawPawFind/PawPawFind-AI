@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.schemas.search_area import SearchAreaRequest, SearchAreaResponse
+from app.schemas.search_area import (
+    SearchAreaCompareResponse,
+    SearchAreaRequest,
+    SearchAreaResponse,
+)
 from app.search_area.environment import OverpassEnvironmentProvider
 from app.search_area.settings import SearchAreaSettings
 from app.services.search_area import SearchAreaRecommendationService
@@ -24,5 +28,16 @@ async def post_search_areas(
 ) -> SearchAreaResponse:
     try:
         return await service.recommend(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/search-areas/compare", response_model=SearchAreaCompareResponse)
+async def post_search_areas_compare(
+    request: SearchAreaRequest,
+    service: SearchAreaRecommendationService = Depends(get_search_area_service),
+) -> SearchAreaCompareResponse:
+    try:
+        return await service.compare(request)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
