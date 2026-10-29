@@ -1,0 +1,244 @@
+{
+  "fearful_park": {
+    "reportId": 1,
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "FEARFUL",
+    "estimatedRadiusMeters": 1000,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 92,
+        "reasonCodes": [
+          "FEARFUL_HIDE",
+          "GREEN_SPACE",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "두려움이 강한 행동 특성 및 주변 녹지와 이동 가능 경로을 고려한 우선 수색 영역입니다."
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.564701,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 86,
+        "reasonCodes": [
+          "FEARFUL_HIDE",
+          "GREEN_SPACE",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "두려움이 강한 행동 특성 및 주변 녹지와 이동 가능 경로을 고려한 우선 수색 영역입니다."
+      }
+    ]
+  },
+  "active_path": {
+    "reportId": 1,
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "CHASE_DRIVEN",
+    "estimatedRadiusMeters": 1250,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 98,
+        "reasonCodes": [
+          "CHASE_ROUTE",
+          "GREEN_SPACE",
+          "WALKING_CORRIDOR",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "추격 성향과 이동 경로 및 주변 녹지와 이동 가능 경로을 고려한 우선 수색 영역입니다."
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.564701,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 93,
+        "reasonCodes": [
+          "CHASE_ROUTE",
+          "WALKING_CORRIDOR",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "추격 성향과 이동 경로 및 보행로와 연결된 이동 경로을 고려한 우선 수색 영역입니다."
+      }
+    ]
+  },
+  "road_barrier": {
+    "reportId": 1,
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "ALOOF",
+    "estimatedRadiusMeters": 500,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 32,
+        "reasonCodes": [
+          "ALOOF_ROAMING"
+        ],
+        "reason": "독립적으로 이동하는 행동 특성 및 주변 환경과 접근성을 고려한 우선 수색 영역입니다."
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.562903,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 29,
+        "reasonCodes": [
+          "ALOOF_ROAMING",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "독립적으로 이동하는 행동 특성 및 주변 환경과 접근성을 고려한 우선 수색 영역입니다."
+      }
+    ]
+  },
+  "sparse": {
+    "reportId": 1,
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "HUMAN_SEEKING",
+    "estimatedRadiusMeters": 1000,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 72,
+        "reasonCodes": [
+          "HUMAN_CONTACT",
+          "RESIDENTIAL_SHELTER",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "사람에게 접근하는 행동 특성 및 주거지 주변 은신 가능 공간을 고려한 우선 수색 영역입니다."
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.568299,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 66,
+        "reasonCodes": [
+          "HUMAN_CONTACT",
+          "RESIDENTIAL_SHELTER",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "사람에게 접근하는 행동 특성 및 주거지 주변 은신 가능 공간을 고려한 우선 수색 영역입니다."
+      }
+    ]
+  },
+  "empty_static": {
+    "reportId": 1,
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "ALOOF",
+    "estimatedRadiusMeters": 1000,
+    "environmentSource": "FIXED_TEST_DATA",
+    "fallbackUsed": false,
+    "assumptions": [],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 53,
+        "reasonCodes": [
+          "ALOOF_ROAMING",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "독립적으로 이동하는 행동 특성 및 주변 환경과 접근성을 고려한 우선 수색 영역입니다."
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.564701,
+          "longitude": 126.978
+        },
+        "radiusMeters": 150,
+        "priorityScore": 47,
+        "reasonCodes": [
+          "ALOOF_ROAMING",
+          "LOW_TRAFFIC"
+        ],
+        "reason": "독립적으로 이동하는 행동 특성 및 주변 환경과 접근성을 고려한 우선 수색 영역입니다."
+      }
+    ]
+  },
+  "fallback": {
+    "reportId": 1,
+    "algorithmVersion": "HEURISTIC_V1",
+    "behaviorType": "FEARFUL",
+    "estimatedRadiusMeters": 1000,
+    "environmentSource": "UNAVAILABLE",
+    "fallbackUsed": true,
+    "assumptions": [
+      "주변 환경 데이터를 사용할 수 없어 마지막 목격 위치를 중심으로 추천했습니다."
+    ],
+    "areas": [
+      {
+        "rank": 1,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 250,
+        "priorityScore": 50,
+        "reasonCodes": [
+          "ENVIRONMENT_FALLBACK",
+          "LAST_SEEN_LOCATION"
+        ],
+        "reason": "환경 데이터를 사용할 수 없어 마지막 목격 위치 주변을 우선 수색 영역으로 제안합니다."
+      },
+      {
+        "rank": 2,
+        "center": {
+          "latitude": 37.5665,
+          "longitude": 126.978
+        },
+        "radiusMeters": 350,
+        "priorityScore": 40,
+        "reasonCodes": [
+          "ENVIRONMENT_FALLBACK",
+          "EXPANDED_SEARCH_RADIUS"
+        ],
+        "reason": "환경 데이터를 사용할 수 없어 마지막 목격 위치 주변으로 범위를 넓힌 확장 수색 영역입니다."
+      }
+    ]
+  }
+}
