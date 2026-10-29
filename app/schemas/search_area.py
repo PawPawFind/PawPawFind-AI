@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Literal
 
@@ -115,5 +115,70 @@ class SearchAreaResponse(BaseModel):
     fallback_used: bool = Field(alias="fallbackUsed")
     assumptions: list[str]
     areas: list[RecommendedSearchArea]
+
+    model_config = {"populate_by_name": True}
+
+
+class ScoreBreakdown(BaseModel):
+    distance: int = Field(ge=0, le=30)
+    behavior_environment: int = Field(alias="behaviorEnvironment", ge=0, le=30)
+    corridor: int = Field(ge=0, le=20)
+    accessibility: int = Field(ge=0, le=10)
+    event_context: int = Field(alias="eventContext", ge=0, le=10)
+
+    model_config = {"populate_by_name": True}
+
+
+class ExplainedSearchArea(RecommendedSearchArea):
+    score_breakdown: ScoreBreakdown | None = Field(alias="scoreBreakdown")
+
+
+class AlgorithmSearchAreas(BaseModel):
+    algorithm_version: Literal["HEURISTIC_V1", "HEURISTIC_V2"] = Field(alias="algorithmVersion")
+    behavior_type: BehaviorType = Field(alias="behaviorType")
+    estimated_radius_meters: int = Field(alias="estimatedRadiusMeters", ge=300, le=3000)
+    environment_source: str = Field(alias="environmentSource")
+    fallback_used: bool = Field(alias="fallbackUsed")
+    assumptions: list[str]
+    areas: list[ExplainedSearchArea]
+
+    model_config = {"populate_by_name": True}
+
+
+class RankChange(BaseModel):
+    """Same rank comparison; this does not match or track physical regions."""
+
+    rank: int = Field(ge=1)
+    status: Literal["BOTH", "ADDED", "REMOVED"]
+    before_center: SearchAreaCenter | None = Field(alias="beforeCenter")
+    after_center: SearchAreaCenter | None = Field(alias="afterCenter")
+    center_shift_meters: float | None = Field(alias="centerShiftMeters", ge=0)
+    before_radius_meters: int | None = Field(alias="beforeRadiusMeters")
+    after_radius_meters: int | None = Field(alias="afterRadiusMeters")
+    before_priority_score: int | None = Field(alias="beforePriorityScore")
+    after_priority_score: int | None = Field(alias="afterPriorityScore")
+    score_delta: int | None = Field(alias="scoreDelta")
+    added_reason_codes: list[str] = Field(alias="addedReasonCodes")
+    removed_reason_codes: list[str] = Field(alias="removedReasonCodes")
+
+    model_config = {"populate_by_name": True}
+
+
+class SearchAreaComparison(BaseModel):
+    fallback_used: bool = Field(alias="fallbackUsed")
+    summary: str
+    area_count_before: int = Field(alias="areaCountBefore")
+    area_count_after: int = Field(alias="areaCountAfter")
+    rank_changes: list[RankChange] = Field(alias="rankChanges")
+
+    model_config = {"populate_by_name": True}
+
+
+class SearchAreaCompareResponse(BaseModel):
+    report_id: int = Field(alias="reportId", ge=1)
+    compared_at: datetime = Field(alias="comparedAt")
+    baseline: AlgorithmSearchAreas
+    improved: AlgorithmSearchAreas
+    comparison: SearchAreaComparison
 
     model_config = {"populate_by_name": True}

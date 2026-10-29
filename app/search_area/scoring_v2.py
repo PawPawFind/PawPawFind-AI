@@ -47,7 +47,10 @@ def score_grid_v2(
         accessibility = max(
             0.0,
             1
-            - sum(penalties.get(kind.value, 0) * strength for kind, strength in strengths.items()),
+            - sum(
+                penalties.get(kind.value, 0) * strength
+                for kind, strength in sorted(strengths.items())
+            ),
         )
         components = ScoreComponents(
             distance=max(0.0, min(1.0, 1 - cell.distance_meters / search_radius_meters)),
@@ -76,7 +79,10 @@ def _strongest(
     strengths: dict[EnvironmentKind, float], preferences: dict[str, float]
 ) -> tuple[float, EnvironmentKind | None]:
     values = sorted(
-        ((preferences.get(kind.value, 0) * strength, kind) for kind, strength in strengths.items()),
+        (
+            (preferences.get(kind.value, 0) * strength, kind)
+            for kind, strength in sorted(strengths.items())
+        ),
         key=lambda pair: (-pair[0], pair[1]),
     )
     if not values or values[0][0] <= 0:

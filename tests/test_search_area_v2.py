@@ -175,3 +175,46 @@ def test_event_context_retains_behavior_meaning_with_decay():
         scored(EnvironmentKind.RAILWAY_BARRIER, 0, profile=profile).components.event_context
         < scored(EnvironmentKind.RAILWAY_BARRIER, 150, profile=profile).components.event_context
     )
+
+
+def test_combined_penalties_clamp_and_duplicate_features_do_not_stack():
+    data = EnvironmentData(
+        "TEST",
+        (
+            EnvironmentFeature(
+                ORIGIN,
+                frozenset(
+                    {
+                        EnvironmentKind.MAJOR_ROAD,
+                        EnvironmentKind.RAILWAY_BARRIER,
+                        EnvironmentKind.ROAD,
+                    }
+                ),
+            ),
+        ),
+    )
+    cell = GridCell(0, 0, ORIGIN, 0)
+    item = score_grid_v2([cell], 1000, BehaviorType.ALOOF, BehaviorProfile(), data)[0]
+    assert item.components.accessibility == 0
+    assert (
+        score_grid_v2(
+            [cell],
+            1000,
+            BehaviorType.ALOOF,
+            BehaviorProfile(),
+            EnvironmentData("TEST", data.features * 10),
+        )[0]
+        == item
+    )
+
+
+def test_empty_grid_and_invalid_config():
+    assert (
+        score_grid_v2([], 1000, BehaviorType.ALOOF, BehaviorProfile(), EnvironmentData("TEST", ()))
+        == []
+    )
+    with pytest.raises(ValueError):
+        scored(
+            EnvironmentKind.FOOTPATH,
+            config=replace(SEARCH_AREA_CONFIG, environment_influence_meters=0),
+        )
